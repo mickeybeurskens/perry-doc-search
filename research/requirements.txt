@@ -1,3 +1,4 @@
 streamlit==1.24.0
 langchain==0.0.225
 jupyterlab==4.0.2
+llama-index==0.7.4

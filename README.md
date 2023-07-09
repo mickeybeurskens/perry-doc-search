@@ -1,13 +1,8 @@
-# Perry
-
-A tool that helps to investigate large document databases in depth through natural language.
+# 🕵 Perry AI Powered Document Analysis
+This repository contains the source code for the Perry AI Powered Document Analysis tool and the research that was done to create it. 
 
 ## Getting Started
+Read the README is the subdirectories for more information on how to get started.
 
-Install a python virtual environment and install the requirements.
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+## Attribution
+This project has been created by Mickey Beurskens at [Forge Fire AI Engineering](https://forgefire.dev/)🔥.
