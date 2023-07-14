@@ -1,0 +1,15 @@
+# Spin up a new instance of the server
+version: "3.3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./compose/streamlit/Dockerfile
+
+    image: "streamlit_app"
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8501:8501"
