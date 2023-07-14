@@ -11,14 +11,20 @@ services:
       - "--api.insecure=true"
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.perryresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.perryresolver.acme.email=mickey@forgefire.dev"
+      - "--certificatesresolvers.perryresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       # The HTTP port
-      - "80:80"
+      - "443:443"
       # The Web UI (enabled by --api.insecure=true)
       - "8080:8080"
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
+      # Certificates
+      - "./letsencrypt:/letsencrypt"
 
   perry:
     build:
@@ -36,3 +42,5 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.perry.rule=Host(`perry.docker.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=perryresolver"

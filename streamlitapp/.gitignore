@@ -281,3 +281,6 @@ perry/media/
 
 # Ignore production config
 config/production.yml
+
+# LetsEncrypt
+letsencrypt
