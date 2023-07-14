@@ -10,7 +10,7 @@ def get_config_directory_path():
 
 
 def get_prodution_config_path():
-    path = get_config_directory_path() / 'config.yaml'
+    path = get_config_directory_path() / 'production.yml'
     if not path.exists():
         raise FileNotFoundError(f'Production config file not found at {path}')
     return path

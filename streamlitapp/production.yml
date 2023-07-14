@@ -2,7 +2,25 @@
 version: "3.3"
 
 services:
-  app:
+
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.10
+    # Enables the web UI and tells Traefik to listen to docker
+    command: 
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  perry:
     build:
       context: .
       dockerfile: ./compose/streamlit/Dockerfile
@@ -15,3 +33,6 @@ services:
       - ./:/app
     ports:
       - "8501:8501"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.perry.rule=Host(`perry.docker.localhost`)"
