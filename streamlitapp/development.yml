@@ -7,8 +7,10 @@ services:
       context: .
       dockerfile: ./compose/streamlit/Dockerfile
 
-    image: "streamlit_app"
+    image: "streamlit"
     working_dir: /app
+    environment:
+      - PERRY_DEPLOYMENT_MODE=development
     volumes:
       - ./:/app
     ports:

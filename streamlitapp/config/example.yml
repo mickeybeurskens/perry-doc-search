@@ -1,0 +1,19 @@
+credentials:
+  usernames:
+    jsmith:
+      email: arthur@gmail.com
+      name: King Arthur
+      password: abc # To be replaced with hashed password
+    rbriggs:
+      email: table@gmail.com
+      name: Round Table
+      password: def # To be replaced with hashed password
+cookie:
+  expiry_days: 30
+  key: some_signature_key # Must be string
+  name: some_cookie_name
+preauthorized:
+  emails:
+  - sword@gmail.com
+
+

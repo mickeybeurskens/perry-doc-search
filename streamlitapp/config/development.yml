@@ -1,0 +1,13 @@
+credentials:
+  usernames:
+    admin:  # This is the username
+      email: admin@forgefire.dev
+      name: King Arthur  # This is the name that will be displayed
+      password: $2b$12$Y.U6WON/9G4YqQec8vinNugiwNVPKi66zIpuy2TX/RS5DLGQfdi6K  # password
+cookie:
+  expiry_days: 0
+  key: round_table_key # Must be string
+  name: perry_cookie
+preauthorized:
+  emails:
+
