@@ -42,5 +42,5 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.perry.rule=Host(`perry.forgefire.dev`)"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=perryresolver"
+      - "traefik.http.routers.perry.entrypoints=websecure"
+      - "traefik.http.routers.perry.tls.certresolver=perryresolver"
