@@ -5,7 +5,7 @@ import pathlib
 
 
 class Message(pydantic.BaseModel):
-    index: int
+    index: int = pydantic.Field(None, ge=0)
     user: str
     message: str
     timestamp: datetime.datetime
