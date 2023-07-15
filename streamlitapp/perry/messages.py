@@ -2,6 +2,7 @@ import pydantic
 import datetime
 import json
 import pathlib
+from perry.utils import save_pydantic_instance, load_pydantic_instance
 
 
 class Message(pydantic.BaseModel):
@@ -26,13 +27,11 @@ def get_message_save_dir() -> pathlib.Path:
 def save_message_history(message_history: MessageHistory, path: pathlib.Path) -> None:
     file_name = f"message_history_{message_history.index}.json"
     file_path = path / file_name
-    with open(file_path, "w") as f:
-        json.dump(message_history.model_dump(mode='json'), f, indent=2)
+    save_pydantic_instance(message_history, file_path)
 
 
 def load_message_history(index: int, path: pathlib.Path) -> MessageHistory:
     file_name = f"message_history_{index}.json"
     file_path = path / file_name
-    with open(file_path, "r") as f:
-        message_history = MessageHistory(**json.load(f))
+    message_history = load_pydantic_instance(MessageHistory, file_path)
     return message_history
