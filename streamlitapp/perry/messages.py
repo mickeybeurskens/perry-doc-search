@@ -1,6 +1,5 @@
 import pydantic
 import datetime
-import json
 import pathlib
 from perry.utils import save_pydantic_instance, load_pydantic_instance
 
