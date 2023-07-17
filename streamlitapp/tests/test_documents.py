@@ -82,3 +82,34 @@ def test_load_from_document_path_should_equal_save():
         save_document_metadata(metadata)
         loaded_metadata = load_metadata_from_document_path(tmp_dir / "test.txt")
         assert metadata == loaded_metadata
+
+
+def test_save_document_should_create_document_and_metadata_file():
+    """ Saving document should create a file. """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_dir = pathlib.Path(tmp_dir)
+        metadata = DocumentMetadata(
+            title="Test Title",
+            summary="Test Summary",
+            file_path=pathlib.Path(tmp_dir / "test.txt"),
+        )
+        document = io.BytesIO(b"hello world")
+        save_document(document, metadata)
+        assert (tmp_dir / "test.txt").exists()
+        assert (tmp_dir / "test_meta.json").exists()
+
+
+def test_load_document_should_equal_save():
+  """ Loading documents should equal the original document and metadata. """
+  with tempfile.TemporaryDirectory() as tmp_dir:
+      tmp_dir = pathlib.Path(tmp_dir)
+      metadata = DocumentMetadata(
+          title="Test Title",
+          summary="Test Summary",
+          file_path=pathlib.Path(tmp_dir / "test.txt"),
+      )
+      document = io.BytesIO(b"hello world")
+      save_document(document, metadata)
+      loaded_document, metadata = load_document(tmp_dir / "test.txt")
+      assert document.getbuffer() == loaded_document.getbuffer()
+      assert metadata == load_document_metadata(tmp_dir / "test_meta.json")

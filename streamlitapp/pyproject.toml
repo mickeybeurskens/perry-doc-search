@@ -10,7 +10,9 @@ packages = [{include = "perry"}]
 python = "^3.11"
 streamlit = "^1.24.1"
 streamlit-authenticator = "^0.2.2"
-pydantic = "^2.0.3"
+pydantic = "^1.10"
+llama-index = "^0.7.9"
+langchain = "^0.0.234"
 
 
 [tool.poetry.group.dev.dependencies]
