@@ -5,7 +5,7 @@ services:
   perry:
     build:
       context: .
-      dockerfile: ./compose/streamlit/Dockerfile
+      dockerfile: ./compose/streamlit/development/Dockerfile
     container_name: perry-dev
     image: "streamlit"
     working_dir: /app

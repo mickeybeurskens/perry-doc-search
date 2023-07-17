@@ -29,7 +29,7 @@ services:
   perry:
     build:
       context: .
-      dockerfile: ./compose/streamlit/Dockerfile
+      dockerfile: ./compose/streamlit/production/Dockerfile
 
     image: "streamlit_app"
     working_dir: /app
