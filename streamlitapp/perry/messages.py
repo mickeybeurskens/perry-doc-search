@@ -8,12 +8,12 @@ class Message(pydantic.BaseModel):
     index: int = pydantic.Field(None, ge=0)
     user: str
     message: str
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime = datetime.datetime.now()
 
 
 class MessageHistory(pydantic.BaseModel):
     index: int = pydantic.Field(None, ge=0)
-    messages: list[Message]
+    messages: list[Message] = None
 
 
 def get_message_save_dir() -> pathlib.Path:

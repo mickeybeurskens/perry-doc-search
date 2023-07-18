@@ -17,7 +17,7 @@ def create_document_index_tool_configs(vector_indexes: list[VectorStoreIndex], m
         )
         index_tool_configs.append(IndexToolConfig(
             query_engine=query_engine,
-            name=f"Document: {doc_meta.file_path.name}",
+            name=f"Document: {doc_meta.file_path}",
             description=doc_meta.summary,
             tool_kwargs={"return_direct": True}
         ))
@@ -30,7 +30,7 @@ def create_langchain_toolkit(index_tool_configs: list[IndexToolConfig]) -> Llama
 def create_langchain_chat_agent(toolkit: LlamaToolkit) -> AgentExecutor:
     """Create LangChain chat agent."""
     memory = ConversationBufferMemory(memory_key="chat_history")
-    llm=ChatOpenAI(temperature=0, model_name="gpt-4")
+    llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
     return create_llama_chat_agent(
         toolkit,
         llm,
