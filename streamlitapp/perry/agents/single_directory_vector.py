@@ -24,6 +24,7 @@ class SingleDirectoryVectorAgent(Agent):
         indices = create_file_indices(docs, VectorStoreIndex, self.service_context)
         save_indices(indices, [self._get_index_save_directory()])
         tool_configs = create_document_index_tool_configs(indices, metadata)
+        self.meta = metadata
         toolkit = create_langchain_toolkit(tool_configs)
         self.agent = create_langchain_chat_agent(toolkit)
 
@@ -39,15 +40,14 @@ class SingleDirectoryVectorAgent(Agent):
         response = self.agent.run(query)
         response_message = Message(
             index=self.message_index,
-            user="perry",
+            user="assistant",
             message=response,
         )
+
         self.message_index += 1
 
         old_message_history_messages = self.message_history.messages
-        if not old_message_history_messages:
-            old_message_history_messages = []
-        new_message_history_messages = old_message_history_messages.append([query_message, response_message])
+        new_message_history_messages = old_message_history_messages + [query_message, response_message]
         self.message_history = MessageHistory(messages=new_message_history_messages, index=0)
         return response
 

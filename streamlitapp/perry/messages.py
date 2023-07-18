@@ -13,7 +13,7 @@ class Message(pydantic.BaseModel):
 
 class MessageHistory(pydantic.BaseModel):
     index: int = pydantic.Field(None, ge=0)
-    messages: list[Message] = None
+    messages: list[Message]
 
 
 def get_message_save_dir() -> pathlib.Path:
