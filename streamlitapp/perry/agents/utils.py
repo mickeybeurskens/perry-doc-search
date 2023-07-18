@@ -8,24 +8,24 @@ from langchain.chat_models import ChatOpenAI
 from perry.documents import DocumentMetadata
 
 
-def create_document_index_tool_configs(vector_indexes: dict[DocumentMetadata, list[VectorStoreIndex]]) -> dict[str, IndexToolConfig]:
+def create_document_index_tool_configs(vector_indexes: list[VectorStoreIndex], metadata: list[DocumentMetadata]) -> dict[str, IndexToolConfig]:
     """Create vector index tool configs."""
-    index_tool_configs = {}
-    for doc_meta, vector_index in vector_indexes.items():
+    index_tool_configs = []
+    for doc_meta, vector_index in zip(metadata, vector_indexes):
         query_engine = vector_index.as_query_engine(
             similarity_top_k=3,
         )
-        index_tool_configs[doc_meta] = IndexToolConfig(
+        index_tool_configs.append(IndexToolConfig(
             query_engine=query_engine,
             name=f"Document: {doc_meta.file_path.name}",
             description=doc_meta.summary,
             tool_kwargs={"return_direct": True}
-        )
+        ))
     return index_tool_configs
 
-def create_langchain_toolkit(index_tool_configs: dict[str, IndexToolConfig]) -> LlamaToolkit:
+def create_langchain_toolkit(index_tool_configs: list[IndexToolConfig]) -> LlamaToolkit:
     """Create LangChain toolkit."""
-    return LlamaToolkit(index_configs= list(index_tool_configs.values()))
+    return LlamaToolkit(index_configs= index_tool_configs)
 
 def create_langchain_chat_agent(toolkit: LlamaToolkit) -> AgentExecutor:
     """Create LangChain chat agent."""
