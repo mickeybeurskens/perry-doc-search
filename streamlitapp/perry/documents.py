@@ -30,11 +30,14 @@ def metadata_postfix() -> str:
 
 
 def get_metadata_filepath(document_path: pathlib.Path):
-    return pathlib.Path(document_path.parent) / pathlib.Path(document_path.stem + metadata_postfix())
+    return pathlib.Path(document_path.parent) / "metadata" / pathlib.Path(document_path.stem + metadata_postfix())
 
 
 def save_document_metadata(metadata: DocumentMetadata):
     """Save document metadata to a json file."""
+    meta_file_path = get_metadata_filepath(metadata.file_path)
+    if not meta_file_path.parent.exists():
+        meta_file_path.parent.mkdir(parents=True)
     save_pydantic_instance(metadata, get_metadata_filepath(metadata.file_path))
 
 

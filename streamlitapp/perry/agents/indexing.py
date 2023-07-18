@@ -5,18 +5,18 @@ from llama_index.composability import ComposableGraph
 from llama_index import StorageContext, ServiceContext, load_index_from_storage
 from perry.utils import get_file_paths_from_dir
 from perry.loaders.unstructured import UnstructuredReader
-from perry.documents import DocumentMetadata, load_document_metadata
+from perry.documents import DocumentMetadata, load_metadata_from_document_path
 
 
-def load_documents_with_unstructured(data_dir: pathlib.Path) -> tuple(list[Document], list[DocumentMetadata]):
+def load_documents_with_unstructured(data_dir: pathlib.Path) -> tuple[list[Document], list[DocumentMetadata]]:
     """Load documents for indexing from file path."""
     loader = UnstructuredReader()
     docs = []
     metadata = []
     for doc_path in get_file_paths_from_dir(data_dir):
         docs.append(loader.load_data(doc_path))
-        metadata.append(load_document_metadata(doc_path))
-    return docs, metadata
+        metadata.append(load_metadata_from_document_path(doc_path))
+    return (docs, metadata)
 
 
 def create_file_indices(

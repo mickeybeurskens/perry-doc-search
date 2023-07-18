@@ -39,7 +39,7 @@ def test_metadata_filepath_should_equal_document_path_with_postfix():
             file_path=pathlib.Path(tmp_dir / "test.txt"),
         )
         assert get_metadata_filepath(metadata.file_path) == pathlib.Path(
-            tmp_dir / "test_meta.json"
+            tmp_dir / "metadata" / "test_meta.json"
         )
 
 
@@ -53,7 +53,7 @@ def test_save_document_metadata_should_create_file():
             file_path=pathlib.Path(tmp_dir / "test.txt"),
         )
         save_document_metadata(metadata)
-        assert (tmp_dir / "test_meta.json").exists()
+        assert (tmp_dir / "metadata" / "test_meta.json").exists()
 
 
 def test_load_document_metadata_should_equal_save():
@@ -66,7 +66,7 @@ def test_load_document_metadata_should_equal_save():
             file_path=pathlib.Path(tmp_dir / "test.txt"),
         )
         save_document_metadata(metadata)
-        loaded_metadata = load_document_metadata(tmp_dir / "test_meta.json")
+        loaded_metadata = load_document_metadata(tmp_dir / "metadata" / "test_meta.json")
         assert metadata == loaded_metadata
 
 
@@ -96,7 +96,7 @@ def test_save_document_should_create_document_and_metadata_file():
         document = io.BytesIO(b"hello world")
         save_document(document, metadata)
         assert (tmp_dir / "test.txt").exists()
-        assert (tmp_dir / "test_meta.json").exists()
+        assert (tmp_dir / "metadata" /"test_meta.json").exists()
 
 
 def test_load_document_should_equal_save():
@@ -112,4 +112,4 @@ def test_load_document_should_equal_save():
       save_document(document, metadata)
       loaded_document, metadata = load_document(tmp_dir / "test.txt")
       assert document.getbuffer() == loaded_document.getbuffer()
-      assert metadata == load_document_metadata(tmp_dir / "test_meta.json")
+      assert metadata == load_document_metadata(tmp_dir / "metadata" / "test_meta.json")

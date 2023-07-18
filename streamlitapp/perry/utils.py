@@ -1,5 +1,5 @@
 import os
-import json
+import pickle
 import openai
 import pathlib
 import pydantic
@@ -12,8 +12,8 @@ def save_pydantic_instance(model_instance: pydantic.BaseModel, path: pathlib.Pat
         model_instance: pydantic instance to save
         path: pathlib.Path to save the instance to
     """
-    with open(path, "w") as f:
-        f.write(model_instance.json(indent=2))
+    with open(path, "wb") as f:
+        f.write(pickle.dumps(model_instance.dict()))
 
 
 def load_pydantic_instance(model_class: pydantic.BaseModel, path: pathlib.Path) -> pydantic.BaseModel:
@@ -24,8 +24,11 @@ def load_pydantic_instance(model_class: pydantic.BaseModel, path: pathlib.Path) 
     """
     if isinstance(model_class, pydantic.BaseModel):
         raise ValueError("model_class must be an uninstanciated pydantic class.")
-    message_history = model_class.parse_file(path)
-    return message_history
+    with open(path, "rb") as f:
+        pickle_data = f.read()
+    instance = model_class.parse_raw(
+        pickle_data, content_type='application/pickle', allow_pickle=True)   
+    return instance
 
 
 def load_openai_api_key(file_path: pathlib.Path, key: str = "OPENAI_API_KEY") -> None:

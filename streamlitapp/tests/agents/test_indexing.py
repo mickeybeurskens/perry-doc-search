@@ -32,8 +32,14 @@ def test_create_vector_indices_should_return_indices():
         file_paths = [tmp_dir_path / "test_file_1.txt", tmp_dir_path / "test_file_2.txt"]
         for file_path in file_paths:
             file_path.touch()
-        docs = load_documents_with_unstructured(tmp_dir_path)
-        indices = create_file_indices(docs.values(), ListIndex, service_context)
+            meta = DocumentMetadata(
+                title=file_path.name,
+                file_path=file_path,
+                summary="test",
+            )
+            save_document_metadata(meta)
+        docs, metadata = load_documents_with_unstructured(tmp_dir_path)
+        indices = create_file_indices(docs, ListIndex, service_context)
         assert len(indices) == len(docs)
 
 
@@ -45,10 +51,16 @@ def test_save_and_load_indices_should_be_the_same():
         file_paths = [tmp_dir_path / "test_file_1.txt", tmp_dir_path / "test_file_2.txt"]
         for file_path in file_paths:
             file_path.touch()
-        docs = load_documents_with_unstructured(tmp_dir_path)
-        indices = create_file_indices(docs.values(), ListIndex, service_context)
-        save_indices(indices, docs.keys())
-        loaded_indices = load_indices(docs.keys())
+            meta = DocumentMetadata(
+                title=file_path.name,
+                file_path=file_path,
+                summary="test",
+            )
+            save_document_metadata(meta)
+        docs, metadata = load_documents_with_unstructured(tmp_dir_path)
+        indices = create_file_indices(docs, ListIndex, service_context)
+        save_indices(indices, [meta.file_path for meta in metadata])
+        loaded_indices = load_indices([meta.file_path for meta in metadata])
         assert len(indices) == len(loaded_indices)
         for index, loaded_index in zip(indices, loaded_indices):
             assert type(index) == type(loaded_index)
