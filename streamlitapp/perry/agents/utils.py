@@ -5,19 +5,20 @@ from llama_index.bridge.langchain import AgentExecutor
 from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
 
 from langchain.chat_models import ChatOpenAI
+from perry.documents import DocumentMetadata
 
 
-def create_vector_index_tool_configs(vector_indexes: dict[str, list[VectorStoreIndex]]) -> dict[str, IndexToolConfig]:
+def create_document_index_tool_configs(vector_indexes: dict[DocumentMetadata, list[VectorStoreIndex]]) -> dict[str, IndexToolConfig]:
     """Create vector index tool configs."""
     index_tool_configs = {}
-    for doc_name, vector_index in vector_indexes.items():
+    for doc_meta, vector_index in vector_indexes.items():
         query_engine = vector_index.as_query_engine(
             similarity_top_k=3,
         )
-        index_tool_configs[doc_name] = IndexToolConfig(
+        index_tool_configs[doc_meta] = IndexToolConfig(
             query_engine=query_engine,
-            name=f"Vector Index {doc_name}",
-            description=f"Aanbestedingsleidraad voor rijkswaterstaat opdrachten",
+            name=f"Document: {doc_meta.file_path.name}",
+            description=doc_meta.summary,
             tool_kwargs={"return_direct": True}
         )
     return index_tool_configs
