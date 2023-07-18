@@ -30,10 +30,10 @@ def create_langchain_toolkit(index_tool_configs: list[IndexToolConfig]) -> Llama
 def create_langchain_chat_agent(toolkit: LlamaToolkit) -> AgentExecutor:
     """Create LangChain chat agent."""
     memory = ConversationBufferMemory(memory_key="chat_history")
-    llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    llm=ChatOpenAI(temperature=0, model_name="gpt-4")
     return create_llama_chat_agent(
         toolkit,
         llm,
         memory=memory,
-        verbose=True
+        verbose=True,
     )

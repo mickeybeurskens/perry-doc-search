@@ -6,6 +6,7 @@ from perry.agents.indexing import load_documents_with_unstructured, create_file_
 from perry.agents.utils import create_document_index_tool_configs, create_langchain_toolkit, create_langchain_chat_agent
 from perry.utils import load_openai_api_key, get_production_env_path
 
+
 class SingleDirectoryVectorAgent(Agent):
     """ Transforms the documents of a single directory to a single vector index. """
     def __init__(self, document_directory: str):
@@ -44,6 +45,8 @@ class SingleDirectoryVectorAgent(Agent):
         self.message_index += 1
 
         old_message_history_messages = self.message_history.messages
+        if not old_message_history_messages:
+            old_message_history_messages = []
         new_message_history_messages = old_message_history_messages.append([query_message, response_message])
         self.message_history = MessageHistory(messages=new_message_history_messages, index=0)
         return response
