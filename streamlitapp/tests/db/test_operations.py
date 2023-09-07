@@ -60,7 +60,7 @@ def test_create_message(test_db):
     created_message = create_message(test_db, user.id, role, message_text)
 
     # Assert
-    assert created_message.message_id is not None
+    assert created_message.id is not None
     assert created_message.user_id == user.id
     assert created_message.role == role
     assert created_message.message == message_text
@@ -81,3 +81,57 @@ def test_get_messages_by_user(test_db):
     assert len(messages) == 2
     for message in messages:
         assert message.user_id == user.id
+
+from perry.db.operations.documents import create_document, get_document, delete_document, add_user_to_document, remove_user_from_document
+from perry.db.operations.users import create_user
+
+def test_create_document(test_db):
+    file_path = "/path/to/document.pdf"
+    
+    created_document = create_document(test_db, file_path)
+    
+    assert created_document.id is not None
+    assert created_document.file_path == file_path
+
+def test_get_document(test_db):
+    file_path = "/path/to/document.pdf"
+    created_document = create_document(test_db, file_path)
+    
+    retrieved_document = get_document(test_db, created_document.id)
+
+    assert retrieved_document.id == created_document.id
+    assert retrieved_document.file_path == file_path
+
+def test_delete_document(test_db):
+    file_path = "/path/to/document.pdf"
+    created_document = create_document(test_db, file_path)
+    
+    delete_document(test_db, created_document.id)
+    retrieved_document = get_document(test_db, created_document.id)
+    
+    assert retrieved_document is None
+
+def test_add_user_to_document(test_db):
+    file_path = "/path/to/document.pdf"
+    username = "robin"
+    password = "brave"
+    created_document = create_document(test_db, file_path)
+    created_user = create_user(test_db, username, password)
+    
+    add_user_to_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user in created_document.users
+
+def test_remove_user_from_document(test_db):
+    file_path = "/path/to/document.pdf"
+    username = "galahad"
+    password = "wise"
+    created_document = create_document(test_db, file_path)
+    created_user = create_user(test_db, username, password)
+    add_user_to_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user in created_document.users
+
+    remove_user_from_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user not in created_document.users
