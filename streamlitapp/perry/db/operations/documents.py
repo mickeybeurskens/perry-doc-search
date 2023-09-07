@@ -32,3 +32,21 @@ def remove_user_from_document(db: Session, user_id: int, document_id: int):
     if db_user and db_document:
         db_document.users.remove(db_user)
         db.commit()
+
+def update_document_description(db: Session, document_id: int, new_description: str):
+    db_document = db.query(Document).filter(Document.id == document_id).first()
+    if db_document is None:
+        return None
+    db_document.description = new_description
+    db.commit()
+    db.refresh(db_document)
+    return db_document
+
+def update_document_title(db: Session, document_id: int, new_title: str):
+    db_document = db.query(Document).filter(Document.id == document_id).first()
+    if db_document is None:
+        return None
+    db_document.title = new_title
+    db.commit()
+    db.refresh(db_document)
+    return db_document

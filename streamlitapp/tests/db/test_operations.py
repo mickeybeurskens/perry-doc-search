@@ -82,7 +82,7 @@ def test_get_messages_by_user(test_db):
     for message in messages:
         assert message.user_id == user.id
 
-from perry.db.operations.documents import create_document, get_document, delete_document, add_user_to_document, remove_user_from_document
+from perry.db.operations.documents import *
 from perry.db.operations.users import create_user
 
 def test_create_document(test_db):
@@ -135,3 +135,25 @@ def test_remove_user_from_document(test_db):
     remove_user_from_document(test_db, created_user.id, created_document.id)
     
     assert created_user not in created_document.users
+
+def test_update_document_description(test_db):
+    file_path = "/path/to/document.pdf"
+    description = "The Holy Grail is the mighty chalice of legend. This document describes its history."
+    created_document = create_document(test_db, file_path)
+    
+    updated_document = update_document_description(test_db, created_document.id, description)
+    
+    assert updated_document.id == created_document.id
+    assert updated_document.description == description
+    assert updated_document.file_path == file_path
+
+def test_update_document_title(test_db):
+    file_path = "/path/to/document.pdf"
+    title = "The Holy Grail"
+    created_document = create_document(test_db, file_path)
+    
+    updated_document = update_document_title(test_db, created_document.id, title)
+    
+    assert updated_document.id == created_document.id
+    assert updated_document.title == title
+    assert updated_document.file_path == file_path
