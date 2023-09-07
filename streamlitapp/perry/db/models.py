@@ -1,10 +1,21 @@
 import datetime
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
+from enum import Enum
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Enum as ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from passlib.context import CryptContext
 
+
 Base = declarative_base()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def to_db_enum(enum_class) -> ENUM:
+    return ENUM(enum_class, name=enum_class.__name__)
+
+
+class MessageRoleEnum(str, Enum):
+    user = "user"
+    assistant = "assistant"
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -24,6 +35,6 @@ class Message(Base):
 
     message_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'))
-    role = Column(String)
+    role = Column(to_db_enum(MessageRoleEnum))
     message = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.now)
