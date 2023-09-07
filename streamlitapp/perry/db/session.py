@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('sqlite://./perry.db')
+engine = create_engine('sqlite:///./perry.db')
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
