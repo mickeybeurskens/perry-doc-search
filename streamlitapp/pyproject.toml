@@ -16,6 +16,8 @@ langchain = "^0.0.234"
 unstructured = "^0.8.1"
 nltk = "^3.8.1"
 python-dotenv = "^1.0.0"
+sqlalchemy = "^2.0.20"
+passlib = "^1.7.4"
 
 
 [tool.poetry.group.dev.dependencies]
