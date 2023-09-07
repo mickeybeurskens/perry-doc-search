@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 from sqlalchemy import Table, Column, String, Integer, ForeignKey, DateTime, Enum as ENUM
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from passlib.context import CryptContext
 
 

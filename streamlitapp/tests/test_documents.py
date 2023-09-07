@@ -1,115 +1,43 @@
 import io
 import pytest
-import tempfile
-import pathlib
-from perry.documents import *
+from pathlib import Path
+from perry.documents import save_file_to_storage, remove_file_from_storage, load_file_from_storage, load_bytes_from_file, get_file_storage_path
+from perry.db.operations.documents import get_document
 
 
-def test_save_bytes_to_file_should_create_file():
-    """ Saving bytes to a file should create a file. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        bytes_obj = io.BytesIO(b"hello world")
-        save_bytes_to_file(bytes_obj, tmp_dir / "test.txt")
-        assert (tmp_dir / "test.txt").exists()
+@pytest.mark.usefixtures("test_db")
+class TestFileStorage:
 
+    @pytest.fixture(autouse=True)
+    def setup_method_fixture(self, test_db):
+        self.session = test_db
+        self.user_id = 1
+        self.title = "Test Document"
+        self.description = "This is a test document."
+        self.suffix = "txt"
+        self.bytes_obj = io.BytesIO(b"Hello World")
+        
 
-def test_load_bytes_from_file_should_equal_save():
-    """ Loading bytes from a file should equal the original bytes. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        bytes_obj = io.BytesIO(b"hello world")
-        save_bytes_to_file(bytes_obj, tmp_dir / "test.txt")
-        loaded_bytes_obj = load_bytes_from_file(tmp_dir / "test.txt")
-        assert bytes_obj.getbuffer() == loaded_bytes_obj.getbuffer()
+    def test_save_file_to_storage(self):
+        # Call the function and get the document ID
+        doc_id = save_file_to_storage(self.session, self.bytes_obj, self.title, self.description, self.user_id, self.suffix)
+        
+        # Assert that a document ID is returned
+        assert doc_id is not None
 
+        # Fetch the document from the database
+        doc = get_document(self.session, doc_id)
 
-def test_metadata_postfix_should_equal_meta_json():
-    """ The metadata postfix should equal '_meta.json'. """
-    assert metadata_postfix() == "_meta.json"
+        # Assert that the document exists and has the expected attributes
+        assert doc is not None
+        assert doc.title == self.title
+        assert doc.description == self.description
+        assert doc.file_path is Path(f"{get_file_storage_path()}", f"{doc_id}.{self.suffix}")
 
+        # Check if the file exists on the disk
+        assert Path(doc.file_path).is_file()
 
-def test_metadata_filepath_should_equal_document_path_with_postfix():
-    """ The document metadata filepath should equal the document path with postfix. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        metadata = DocumentMetadata(
-            title="Test Title",
-            summary="Test Summary",
-            file_path=pathlib.Path(tmp_dir / "test.txt"),
-        )
-        assert get_metadata_filepath(metadata.file_path) == pathlib.Path(
-            tmp_dir / "metadata" / "test_meta.json"
-        )
-
-
-def test_save_document_metadata_should_create_file():
-    """ Saving document metadata should create a file. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        metadata = DocumentMetadata(
-            title="Test Title",
-            summary="Test Summary",
-            file_path=pathlib.Path(tmp_dir / "test.txt"),
-        )
-        save_document_metadata(metadata)
-        assert (tmp_dir / "metadata" / "test_meta.json").exists()
-
-
-def test_load_document_metadata_should_equal_save():
-    """ Loading document metadata should equal the original metadata. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        metadata = DocumentMetadata(
-            title="Test Title",
-            summary="Test Summary",
-            file_path=pathlib.Path(tmp_dir / "test.txt"),
-        )
-        save_document_metadata(metadata)
-        loaded_metadata = load_document_metadata(tmp_dir / "metadata" / "test_meta.json")
-        assert metadata == loaded_metadata
-
-
-def test_load_from_document_path_should_equal_save():
-    """ Loading document metadata from document path should equal the original metadata. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        metadata = DocumentMetadata(
-            title="Test Title",
-            summary="Test Summary",
-            file_path=pathlib.Path(tmp_dir / "test.txt"),
-        )
-        save_document_metadata(metadata)
-        loaded_metadata = load_metadata_from_document_path(tmp_dir / "test.txt")
-        assert metadata == loaded_metadata
-
-
-def test_save_document_should_create_document_and_metadata_file():
-    """ Saving document should create a file. """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
-        metadata = DocumentMetadata(
-            title="Test Title",
-            summary="Test Summary",
-            file_path=pathlib.Path(tmp_dir / "test.txt"),
-        )
-        document = io.BytesIO(b"hello world")
-        save_document(document, metadata)
-        assert (tmp_dir / "test.txt").exists()
-        assert (tmp_dir / "metadata" /"test_meta.json").exists()
-
-
-def test_load_document_should_equal_save():
-  """ Loading documents should equal the original document and metadata. """
-  with tempfile.TemporaryDirectory() as tmp_dir:
-      tmp_dir = pathlib.Path(tmp_dir)
-      metadata = DocumentMetadata(
-          title="Test Title",
-          summary="Test Summary",
-          file_path=pathlib.Path(tmp_dir / "test.txt"),
-      )
-      document = io.BytesIO(b"hello world")
-      save_document(document, metadata)
-      loaded_document, metadata = load_document(tmp_dir / "test.txt")
-      assert document.getbuffer() == loaded_document.getbuffer()
-      assert metadata == load_document_metadata(tmp_dir / "metadata" / "test_meta.json")
+        # Read the saved file and compare its contents with the original bytes object
+        saved_bytes_obj = load_bytes_from_file(Path(doc.file_path))
+        self.bytes_obj.seek(0)  # reset cursor position in the original bytes object
+        assert saved_bytes_obj.read() == self.bytes_obj.read()

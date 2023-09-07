@@ -1,4 +1,3 @@
-from pathlib import Path
 from sqlalchemy.orm import Session
 from perry.db.models import Document, User
 
