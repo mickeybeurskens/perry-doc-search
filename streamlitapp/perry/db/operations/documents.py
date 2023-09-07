@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from perry.db.models import Document, User
 
 
-def create_document(db: Session, file_path: str):
-    db_document = Document(file_path=file_path)
+def create_document(db: Session):
+    db_document = Document()
     db.add(db_document)
     db.commit()
     db.refresh(db_document)
@@ -32,6 +32,13 @@ def remove_user_from_document(db: Session, user_id: int, document_id: int):
     if db_user and db_document:
         db_document.users.remove(db_user)
         db.commit()
+
+def update_document_file_path(db: Session, document_id: int, new_file_path: str):
+    db_document = db.query(Document).filter(Document.id == document_id).first()
+    if db_document is None:
+        return None
+    db_document.file_path = new_file_path
+    return db_document
 
 def update_document_description(db: Session, document_id: int, new_description: str):
     db_document = db.query(Document).filter(Document.id == document_id).first()
