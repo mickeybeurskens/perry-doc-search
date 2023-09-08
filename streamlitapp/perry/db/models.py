@@ -25,6 +25,11 @@ user_document_relation = Table(
     Column('document_id', Integer, ForeignKey('documents.id'))
 )
 
+conversation_document_relation = Table(
+    'conversation_document_association', Base.metadata,
+    Column('conversation_id', Integer, ForeignKey('conversations.id')),
+    Column('document_id', Integer, ForeignKey('documents.id'))
+)
 
 class User(Base):
     __tablename__ = 'users'
@@ -33,6 +38,7 @@ class User(Base):
     _password = Column("password", String)
 
     documents = relationship('Document', secondary=user_document_relation, back_populates="users")
+    conversations = relationship('Conversation', back_populates='user')
     
     def set_password(self, password: str):
         self._password = pwd_context.hash(password)
@@ -49,6 +55,8 @@ class Message(Base):
     role = Column(to_db_enum(MessageRoleEnum))
     message = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.now)
+    conversation_id = Column(Integer, ForeignKey('conversations.id')) 
+    conversation = relationship('Conversation', back_populates='messages')
 
 
 class Document(Base):
@@ -59,4 +67,32 @@ class Document(Base):
     file_path = Column(String)
     title = Column(String, default="")  
     description = Column(String, default="")  
+    conversations = relationship('Conversation', secondary=conversation_document_relation, back_populates="documents")
 
+
+
+class Conversation(Base):
+    __tablename__ = 'conversations'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    start_time = Column(DateTime, default=datetime.datetime.now)
+
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship('User', back_populates='conversations')
+    # agent_id = Column(Integer, ForeignKey('agents.id'))
+    # agent = relationship('Agent', back_populates='conversation')
+    
+    messages = relationship('Message', back_populates='conversation')
+    documents = relationship('Document', secondary=conversation_document_relation, back_populates="conversations")
+
+
+
+class Agent(Base):
+    __tablename__ = 'agents'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    # conversation_id = Column(Integer, ForeignKey('conversations.id'))
+    # conversation = relationship('Conversation', back_populates='agent')
+    # name = Column(String, unique=True, index=True)
+    # Other possible fields like capabilities, training_data_version, etc.
+    
