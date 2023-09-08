@@ -49,6 +49,27 @@ def test_remove_file_success(test_db, tmpdir):
         assert not temp_file_path.exists()
         mock_delete_document.assert_called_with(test_db, 1)
 
+def test_load_file_success(test_db, tmpdir):
+    # Setup: Mock the database object and file path
+    with patch('perry.db.operations.documents.get_document') as mock_get_document:
+        
+        # Mock the document object to return a valid file path
+        mock_document = Mock()
+        temp_file_path = tmpdir / "temp_file.txt"
+        mock_document.file_path = str(temp_file_path)
+        mock_get_document.return_value = mock_document
+
+        # Create an actual temporary file
+        file_content = b"temporary file content"
+        with open(temp_file_path, 'wb') as f:
+            f.write(file_content)
+
+        # Action: Load the file
+        loaded_content = load_file(db_session=test_db, document_id=1)
+
+        # Verify: Loaded content should match the original content
+        assert loaded_content.getbuffer() == file_content
+
 def test_create_document(test_db):
     created_document = create_document(test_db)
     test_db.commit()
