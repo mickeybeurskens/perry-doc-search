@@ -22,9 +22,11 @@ class BaseAgent(ABC):
     def save(self):
         """ Save the agent state. """
 
+    @classmethod
     @abstractmethod
-    def load(self, agent_id: int):
+    def load(cls, agent_id: int) -> BaseAgent:
         """ Load the agent state. """
+
 
 
 class AgentRegistry:
@@ -44,3 +46,9 @@ class AgentRegistry:
         if not agent_class:
             raise ValueError(f"Agent type {agent_type} not found.")
         return agent_class(config, agent_id)
+    
+    def get_agent_class(self, agent_type: str) -> Type[BaseAgent]:
+        agent_class = self._agent_registry.get(agent_type)
+        if not agent_class:
+            raise ValueError(f"Agent type {agent_type} not found.")
+        return agent_class
