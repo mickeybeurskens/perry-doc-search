@@ -26,7 +26,6 @@ def test_delete_conversation(test_db):
     conv = read_conversation(test_db, new_id)
     assert conv is None
 
-# Edge Cases
 def test_update_nonexistent_conversation(test_db):
     assert update_conversation(test_db, 9999, 1) is None
 

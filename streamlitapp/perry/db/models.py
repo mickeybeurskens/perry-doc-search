@@ -79,8 +79,8 @@ class Conversation(Base):
 
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship('User', back_populates='conversations')
-    # agent_id = Column(Integer, ForeignKey('agents.id'))
-    # agent = relationship('Agent', back_populates='conversation')
+
+    agent = relationship('Agent', uselist=False, back_populates='conversation')
     
     messages = relationship('Message', back_populates='conversation')
     documents = relationship('Document', secondary=conversation_document_relation, back_populates="conversations")
@@ -91,8 +91,8 @@ class Agent(Base):
     __tablename__ = 'agents'
     
     id = Column(Integer, primary_key=True, index=True)
-    # conversation_id = Column(Integer, ForeignKey('conversations.id'))
-    # conversation = relationship('Conversation', back_populates='agent')
-    # name = Column(String, unique=True, index=True)
-    # Other possible fields like capabilities, training_data_version, etc.
+    conversation_id = Column(Integer, ForeignKey('conversations.id'), unique=True)
+    
+    conversation = relationship('Conversation', back_populates='agent')
+
     
