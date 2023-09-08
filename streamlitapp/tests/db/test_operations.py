@@ -65,6 +65,7 @@ from perry.db.operations.users import create_user
 
 def test_create_document(test_db):
     created_document = create_document(test_db)
+    test_db.commit()
     
     assert created_document.id is not None
 
