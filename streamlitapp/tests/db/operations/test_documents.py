@@ -1,9 +1,10 @@
 import pytest
 import pathlib
 import io
-import tempfile
 from unittest.mock import Mock, patch
-from perry.db.operations.documents import save_file, remove_file  
+from perry.db.operations.documents import *
+from perry.db.operations.users import create_user
+
 
 @pytest.fixture
 def mock_bytes_obj():
@@ -47,3 +48,75 @@ def test_remove_file_success(test_db, tmpdir):
         # Verify: File should be deleted, and document should be removed from the database
         assert not temp_file_path.exists()
         mock_delete_document.assert_called_with(test_db, 1)
+
+def test_create_document(test_db):
+    created_document = create_document(test_db)
+    test_db.commit()
+    
+    assert created_document.id is not None
+
+def test_get_document(test_db):
+    created_document = create_document(test_db)
+    
+    retrieved_document = get_document(test_db, created_document.id)
+
+    assert retrieved_document.id == created_document.id
+
+def test_delete_document(test_db):
+    created_document = create_document(test_db)
+    
+    delete_document(test_db, created_document.id)
+    retrieved_document = get_document(test_db, created_document.id)
+    
+    assert retrieved_document is None
+
+def test_add_user_to_document(test_db):
+    username = "robin"
+    password = "brave"
+    created_document = create_document(test_db)
+    created_user = create_user(test_db, username, password)
+    
+    add_user_to_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user in created_document.users
+
+def test_remove_user_from_document(test_db):
+    username = "galahad"
+    password = "wise"
+    created_document = create_document(test_db)
+    created_user = create_user(test_db, username, password)
+    add_user_to_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user in created_document.users
+
+    remove_user_from_document(test_db, created_user.id, created_document.id)
+    
+    assert created_user not in created_document.users
+
+def test_update_document_description(test_db):
+    description = "The Holy Grail is the mighty chalice of legend. This document describes its history."
+    created_document = create_document(test_db)
+    
+    updated_document = update_document_description(test_db, created_document.id, description)
+    
+    assert updated_document.id == created_document.id
+    assert updated_document.description == description
+
+def test_update_document_title(test_db):
+    title = "The Holy Grail"
+    created_document = create_document(test_db)
+    
+    updated_document = update_document_title(test_db, created_document.id, title)
+    
+    assert updated_document.id == created_document.id
+    assert updated_document.title == title
+
+def test_update_document_file_path(test_db):
+    file_path = "/path/to/document.pdf"
+    new_file_path = "/path/to/updated_document.pdf"
+    created_document = create_document(test_db)
+    
+    updated_document = update_document_file_path(test_db, created_document.id, new_file_path)
+    
+    assert updated_document.id == created_document.id
+    assert updated_document.file_path == new_file_path
