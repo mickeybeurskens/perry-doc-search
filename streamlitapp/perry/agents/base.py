@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, Type
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from perry.db.models import Agent as DBAgent
+from perry.db.operations.agents import read_agent
 
 
 class BaseAgentConfig(BaseModel):
@@ -29,6 +31,16 @@ class BaseAgent(ABC):
     def load(cls, agent_id: int) -> BaseAgent:
         """ Load the agent state. """
 
+    @staticmethod
+    def _load_agent_db_data(db_session: Session, agent_id: int) -> DBAgent:
+        agent_data = read_agent(db_session, agent_id)
+
+        if agent_data is None:
+            raise ValueError(f"No agent found with ID {agent_id} in database.")
+        
+        conversation_id = agent_data.conversation_id
+        if conversation_id is None:
+            raise ValueError(f"Agent with id {agent_data.id} not connected to a conversation.")
 
 
 class AgentRegistry:

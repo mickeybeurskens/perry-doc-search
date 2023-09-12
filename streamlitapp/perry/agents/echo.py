@@ -18,11 +18,7 @@ class EchoAgent(BaseAgent):
 
     @classmethod
     def load(cls, agent_id: int, db_session: Session) -> BaseAgent:
-            # Query the database to get the agent's configuration
-        agent_data = db_session.query(Agent).filter_by(id=agent_id).first()
-
-        if agent_data is None:
-            raise ValueError(f"No agent found with ID {agent_id}")
+        cls._load_agent_db_data(db_session, agent_id)
 
         base_config = BaseAgentConfig(name="EchoAgent")
         return cls(base_config, agent_id, db_session)

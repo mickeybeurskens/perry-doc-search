@@ -17,14 +17,13 @@ import openai
 from sqlalchemy.orm import Session
 
 from perry.agents.base import BaseAgent, BaseAgentConfig
-from perry.db.models import Document as PerryDocument, User, Agent
-from perry.db.operations.agents import read_agent
+from perry.db.models import Document as DBDocument, User as DBUser, Agent as DBAgent
+
 
 class SubquestionConfig(BaseAgentConfig):
     """Configuration for the SubquestionAgent."""
 
     name: str
-    subquestions: list
     language_model_name: str
     temperature: float
 
@@ -37,24 +36,18 @@ class SubquestionAgent(BaseAgent):
         self.id = agent_id
         self._db_session = db_session
 
-        self._init_agent()
+        agent_data = self._load_agent_db_data(db_session, agent_id)
 
-    def _init_agent(self):
-        self._agent = read_agent(self._db_session, self.id)
-        if self._agent is None:
-            raise ValueError(f"Agent with id {self.id} not found in database.")
-        
-        self._conversation_id = self._agent.conversation_id
-        if self._conversation_id is None:
-            raise ValueError(f"Agent with id {self.id} not connected to a conversation.")
-
-
-    def query(self, query: str) -> str:
+    async def query(self, query: str) -> str:
         return "Echo: " + query
 
     def save(self):
         pass
 
     @classmethod
-    def load(cls, agent_id: int) -> BaseAgent:
-        pass
+    def load(cls, agent_id: int, db_session) -> BaseAgent:
+        config = SubquestionConfig(name="SubquestionAgent",
+                                    language_model_name="gpt3.5-turbo",
+                                    temperature=0.3)
+        return cls(config, agent_id, db_session)
+
