@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, Type
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 
 class BaseAgentConfig(BaseModel):
@@ -10,12 +11,13 @@ class BaseAgentConfig(BaseModel):
 
 class BaseAgent(ABC):
 
-    def __init__(self, config: BaseAgentConfig, agent_id: int):
+    def __init__(self, config: BaseAgentConfig, agent_id: int, db_session: Session):
         self.config = config
         self.id = agent_id
+        self._db_session = db_session
 
     @abstractmethod
-    def query(self, query: str) -> str:
+    async def query(self, query: str) -> str:
         """ Query the agent and get a response. """
 
     @abstractmethod
