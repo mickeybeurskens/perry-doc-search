@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from perry.db.models import Conversation
 
 
-def create_conversation(session: Session, user_id):
-    new_conversation = Conversation(user_id=user_id)
+def create_conversation(session: Session):
+    new_conversation = Conversation()
     session.add(new_conversation)
     session.commit()
     return new_conversation.id
