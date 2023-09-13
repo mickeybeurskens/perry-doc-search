@@ -28,6 +28,7 @@ async def test_agent_query_returns_string(agent_class, config, test_db):
     assert isinstance(response, str)
 
 # TODO: Fix saving and loading generally
+# TODO: Use fixtures to create agents and conversations
 # @pytest.mark.parametrize('agent_class, config', agents_to_test)
 # def test_load_should_return_agent_instance(agent_class, config, test_db):
 #     agent_id = create_agent(test_db)

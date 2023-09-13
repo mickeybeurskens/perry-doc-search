@@ -1,8 +1,10 @@
 import pytest
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, Session
 from perry.db.models import Base
-from tests.fixtures import *
+from perry.db.operations.agents import create_agent
+from perry.db.operations.conversations import create_conversation
+from perry.db.api import connect_agent_to_conversation
 
 @pytest.fixture(scope="session", autouse=True)
 def create_test_db() -> Session:
@@ -26,3 +28,21 @@ def test_db(create_test_db) -> Session:
     create_test_db.commit()
 
     return create_test_db
+
+@pytest.fixture(scope="function")
+def add_agent_to_db(test_db) -> int:
+    """Add an agent to the database and return its ID."""
+    return create_agent(test_db)
+
+@pytest.fixture(scope="function")
+def add_conversation_to_db(test_db) -> int:
+    """Add a conversation to the database and return its ID."""
+    return create_conversation(test_db)
+
+@pytest.fixture(scope="function")
+def add_connected_agent_and_conversation_to_db(test_db) -> tuple[int, int]:
+    """Add an agent and a conversation to the database, connect them and return their IDs."""
+    agent_id = create_agent(test_db)
+    conversation_id = create_conversation(test_db)
+    connect_agent_to_conversation(test_db, agent_id, conversation_id)
+    return agent_id, conversation_id
