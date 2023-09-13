@@ -36,16 +36,16 @@ class SubquestionAgent(BaseAgent):
         self.id = agent_id
         self._db_session = db_session
 
-        agent_data = self._load_agent_db_data(db_session, agent_id)
+        agent_data = self._assert_db_data(db_session, agent_id)
 
     async def query(self, query: str) -> str:
         return "Echo: " + query
 
-    def save(self):
+    def _on_save(self):
         pass
 
     @classmethod
-    def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
+    def _on_load(cls, db_session: Session, agent_id: int) -> BaseAgent:
         config = SubquestionConfig(name="SubquestionAgent",
                                     language_model_name="gpt3.5-turbo",
                                     temperature=0.3)

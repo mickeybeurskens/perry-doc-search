@@ -23,16 +23,26 @@ class BaseAgent(ABC):
         """ Query the agent and get a response. """
 
     @abstractmethod
+    def _on_save(self):
+        """ Agent specific save logic. """
+
     def save(self):
-        """ Save the agent state. """
+        """ Save the state of the agent. """
+        self._on_save()
 
     @classmethod
     @abstractmethod
+    def _on_load(cls, db_session: Session, agent_id: int) -> BaseAgent:
+        """ Agent specific loading logic. """
+
+    @classmethod
     def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
-        """ Load the agent state. """
+        """ Load the agent state and return an instance of the agent. """
+        cls._assert_db_data(db_session, agent_id)
+        return cls._on_load(db_session, agent_id)
 
     @staticmethod
-    def _load_agent_db_data(db_session: Session, agent_id: int) -> DBAgent:
+    def _assert_db_data(db_session: Session, agent_id: int) -> DBAgent:
         agent_data = read_agent(db_session, agent_id)
 
         if agent_data is None:

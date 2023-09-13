@@ -9,17 +9,17 @@ class EchoAgent(BaseAgent):
         self.config = config
         self.id = agent_id
         self._db_session = db_session
-        self._agent_data = self._load_agent_db_data(db_session, agent_id)
+        self._agent_data = self._assert_db_data(db_session, agent_id)
 
     async def query(self, query: str) -> str:
         return "Echo: " + query
 
-    def save(self):
+    def _on_save(self):
         pass
 
     @classmethod
-    def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
-        cls._load_agent_db_data(db_session, agent_id)
+    def _on_load(cls, db_session: Session, agent_id: int) -> BaseAgent:
+        cls._assert_db_data(db_session, agent_id)
 
         base_config = BaseAgentConfig(name="EchoAgent")
         return cls(db_session, base_config, agent_id)
