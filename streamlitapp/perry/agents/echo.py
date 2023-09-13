@@ -5,10 +5,11 @@ from perry.db.models import Agent
 
 class EchoAgent(BaseAgent):
     """ An agent that echoes the query. """
-    def __init__(self, config: BaseAgentConfig, agent_id: int, db_session: Session):
+    def __init__(self, db_session: Session, config: BaseAgentConfig, agent_id: int):
         self.config = config
         self.id = agent_id
         self._db_session = db_session
+        self._agent_data = self._load_agent_db_data(db_session, agent_id)
 
     async def query(self, query: str) -> str:
         return "Echo: " + query

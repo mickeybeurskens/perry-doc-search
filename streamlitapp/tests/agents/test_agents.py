@@ -42,6 +42,19 @@ def test_load_should_return_agent_instance(agent_class, config, set_up_new_agent
     # assert isinstance(loaded_agent, agent_class)
     # assert loaded_agent.config == agent.config
 
+@pytest.mark.parametrize("agent_class, config", agents_to_test)
+def test_init_should_raise_value_error_when_agent_not_found(
+    agent_class, config, test_db
+):
+    with pytest.raises(ValueError):
+        agent_class(test_db, config, -1)
+
+@pytest.mark.parametrize("agent_class, config", agents_to_test)
+def test_init_should_raise_value_error_when_agent_not_connected_to_conversation(
+    agent_class, config, test_db, add_agent_to_db
+):
+    with pytest.raises(ValueError):
+        agent_class(test_db, config, add_agent_to_db)
 
 @pytest.mark.parametrize("agent_class, config", agents_to_test)
 def test_load_should_raise_value_error_when_agent_not_found(

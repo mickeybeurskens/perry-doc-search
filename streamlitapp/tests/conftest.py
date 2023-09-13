@@ -13,20 +13,14 @@ def create_test_db() -> Session:
     engine = create_engine("sqlite:///test_db.sqlite")
     Base.metadata.create_all(bind=engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return SessionLocal()
+    session = SessionLocal()
+    clear_db(session)
+    return session
 
 @pytest.fixture(scope="function", autouse=True)
 def test_db(create_test_db) -> Session:
     """Empty database before each test and return."""
-    
-    # Reflect existing tables to metadata
-    metadata = MetaData()
-    metadata.reflect(bind=create_test_db.get_bind())
-
-    # Delete records one by one from each table
-    for table in reversed(metadata.sorted_tables):
-        create_test_db.execute(table.delete())
-    create_test_db.commit()
+    clear_db(create_test_db)
 
     return create_test_db
 
@@ -52,3 +46,13 @@ def create_user_in_db():
     def _create_user_in_db(test_db, username: str, password: str):
         return create_user(test_db, username, password)
     return _create_user_in_db
+
+def clear_db(db_session: Session):
+    # Reflect existing tables to metadata
+    metadata = MetaData()
+    metadata.reflect(bind=db_session.get_bind())
+
+    # Delete records one by one from each table
+    for table in reversed(metadata.sorted_tables):
+        db_session.execute(table.delete())
+    db_session.commit()
