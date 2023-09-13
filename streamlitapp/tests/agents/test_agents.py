@@ -37,6 +37,7 @@ async def test_agent_query_returns_string(
     assert isinstance(response, str)
 
 
+@pytest.mark.parametrize("agent_class, config", agents_to_test)
 def test_load_should_return_agent_instance(
     agent_class, test_db, config, set_up_new_agent
 ):
