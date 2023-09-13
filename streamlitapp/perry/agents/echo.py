@@ -17,7 +17,7 @@ class EchoAgent(BaseAgent):
         pass
 
     @classmethod
-    def load(cls, agent_id: int, db_session: Session) -> BaseAgent:
+    def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
         cls._load_agent_db_data(db_session, agent_id)
 
         base_config = BaseAgentConfig(name="EchoAgent")

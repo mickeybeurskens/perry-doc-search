@@ -13,7 +13,7 @@ class BaseAgentConfig(BaseModel):
 
 class BaseAgent(ABC):
 
-    def __init__(self, config: BaseAgentConfig, agent_id: int, db_session: Session):
+    def __init__(self, db_session: Session, config: BaseAgentConfig, agent_id: int):
         self.config = config
         self.id = agent_id
         self._db_session = db_session
@@ -28,7 +28,7 @@ class BaseAgent(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls, agent_id: int) -> BaseAgent:
+    def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
         """ Load the agent state. """
 
     @staticmethod

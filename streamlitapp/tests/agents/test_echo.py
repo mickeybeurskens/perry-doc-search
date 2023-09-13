@@ -26,5 +26,5 @@ def test_load(test_db):
     agent_id = create_agent(test_db)
     conversation_id = create_conversation(test_db)
     connect_agent_to_conversation(test_db, agent_id, conversation_id)
-    loaded_agent = EchoAgent.load(agent_id, test_db)
+    loaded_agent = EchoAgent.load(test_db, agent_id)
     assert isinstance(loaded_agent, EchoAgent)

@@ -31,7 +31,7 @@ class SubquestionConfig(BaseAgentConfig):
 class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
 
-    def __init__(self, config: SubquestionConfig, agent_id: int, db_session: Session):
+    def __init__(self, db_session: Session, config: SubquestionConfig, agent_id: int):
         self.config = config
         self.id = agent_id
         self._db_session = db_session
@@ -45,9 +45,9 @@ class SubquestionAgent(BaseAgent):
         pass
 
     @classmethod
-    def load(cls, agent_id: int, db_session) -> BaseAgent:
+    def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
         config = SubquestionConfig(name="SubquestionAgent",
                                     language_model_name="gpt3.5-turbo",
                                     temperature=0.3)
-        return cls(config, agent_id, db_session)
+        return cls(db_session, config, agent_id)
 
