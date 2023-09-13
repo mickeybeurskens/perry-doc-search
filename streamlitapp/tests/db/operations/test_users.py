@@ -12,10 +12,10 @@ def test_create_user(test_db):
     assert created_user.username == username
     assert pwd_context.verify(password, created_user._password)
 
-def test_get_user(test_db):
-    username = "jane"
-    password = "doe"
-    created_user = create_user(test_db, username, password)
+def test_get_user(test_db, create_user_in_db):
+    username = "arthur"
+    password = "dent"
+    created_user = create_user_in_db(test_db, username, password)
     
     retrieved_user = get_user(test_db, created_user.id)
     

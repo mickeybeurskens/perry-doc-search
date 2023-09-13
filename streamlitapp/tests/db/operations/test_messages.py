@@ -1,10 +1,9 @@
 from perry.db.operations.messages import create_message, get_messages_by_user
-from perry.db.operations.users import create_user
 
-def test_create_message(test_db):
+def test_create_message(test_db, create_user_in_db):
     username = "lancelot"
     password = "blue"
-    user = create_user(test_db, username, password)
+    user = create_user_in_db(test_db, username, password)
     role = "user"
     message_text = "Hello, world!"
 
@@ -15,11 +14,11 @@ def test_create_message(test_db):
     assert created_message.role == role
     assert created_message.message == message_text
 
-def test_get_messages_by_user(test_db):
+def test_get_messages_by_user(test_db, create_user_in_db):
     username = "arthur"
     password = "grail"
     role = "user"
-    user = create_user(test_db, username, password)
+    user = create_user_in_db(test_db, username, password)
     create_message(test_db, user.id, role, "Hello, world!")
     create_message(test_db, user.id, role, "Hello again!")
 
