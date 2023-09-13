@@ -22,4 +22,4 @@ class EchoAgent(BaseAgent):
         cls._load_agent_db_data(db_session, agent_id)
 
         base_config = BaseAgentConfig(name="EchoAgent")
-        return cls(base_config, agent_id, db_session)
+        return cls(db_session, base_config, agent_id)

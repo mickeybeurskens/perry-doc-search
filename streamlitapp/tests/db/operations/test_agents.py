@@ -1,24 +1,35 @@
 from perry.db.operations.agents import *
 from perry.db.models import Agent
 
-def test_create_agent(test_db):
+def test_should_create_agent_and_return_agent_instance(test_db):
     agent_id = create_agent(test_db)
-    conv = test_db.query(Agent).filter_by(id=agent_id).first()
-    assert isinstance(conv, Agent)
+    agent = test_db.query(Agent).filter_by(id=agent_id).first()
+    assert isinstance(agent, Agent)
+    assert agent.config is None
 
-def test_read_agent(test_db, add_agent_to_db):
-    conv = read_agent(test_db, add_agent_to_db)
-    assert conv is not None
-    assert conv.id == add_agent_to_db
-    assert isinstance(conv, Agent)
+def test_should_return_agent_given_valid_agent_id(test_db, add_agent_to_db):
+    agent = read_agent(test_db, add_agent_to_db)
+    assert agent is not None
+    assert agent.id == add_agent_to_db
+    assert isinstance(agent, Agent)
 
-def test_delete_agent(test_db, add_agent_to_db):
+def test_should_delete_agent_given_valid_agent_id(test_db, add_agent_to_db):
     assert delete_agent(test_db, add_agent_to_db) is True
-    conv = read_agent(test_db, add_agent_to_db)
-    assert conv is None
+    agent = read_agent(test_db, add_agent_to_db)
+    assert agent is None
 
-def test_delete_nonexistent_conversation(test_db):
+def test_should_return_none_when_trying_to_delete_nonexistent_agent(test_db):
     assert delete_agent(test_db, 9999) is None
 
-def test_read_nonexistent_conversation(test_db):
+def test_should_return_none_when_trying_to_read_nonexistent_agent(test_db):
     assert read_agent(test_db, 9999) is None
+
+def test_should_update_agent_config_given_valid_agent_id(test_db, add_agent_to_db):
+    config_metadata = {"key": "value"}
+    assert update_config(test_db, add_agent_to_db, config_metadata) is True
+    agent = read_agent(test_db, add_agent_to_db)
+    assert agent.config == config_metadata
+
+def test_should_return_none_when_updating_config_for_nonexistent_agent(test_db):
+    config_metadata = {"key": "value"}
+    assert update_config(test_db, -1, config_metadata) is None
