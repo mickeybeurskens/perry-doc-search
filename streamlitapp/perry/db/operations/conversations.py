@@ -8,8 +8,10 @@ def create_conversation(session: Session):
     session.commit()
     return new_conversation.id
 
+
 def read_conversation(session: Session, conversation_id):
     return session.query(Conversation).filter_by(id=conversation_id).first()
+
 
 def update_conversation(session: Session, conversation_id, user_id=None):
     conversation = session.query(Conversation).filter_by(id=conversation_id).first()
@@ -19,6 +21,7 @@ def update_conversation(session: Session, conversation_id, user_id=None):
         conversation.user_id = user_id
     session.commit()
     return conversation
+
 
 def delete_conversation(session: Session, conversation_id):
     conversation = session.query(Conversation).filter_by(id=conversation_id).first()

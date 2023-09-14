@@ -21,6 +21,7 @@ def create_test_db() -> Session:
     clear_db(session)
     return session
 
+
 @pytest.fixture(scope="function", autouse=True)
 def test_db(create_test_db) -> Session:
     """Empty database before each test and return."""
@@ -28,44 +29,59 @@ def test_db(create_test_db) -> Session:
 
     return create_test_db
 
+
 @pytest.fixture(scope="function")
 def add_agent_to_db(test_db) -> int:
     """Add an agent to the database and return its ID."""
+
     def _add_agent_to_db():
         return create_agent(test_db)
+
     return _add_agent_to_db
+
 
 @pytest.fixture(scope="function")
 def add_conversation_to_db(test_db) -> int:
     """Add a conversation to the database and return its ID."""
+
     def _add_conversation_to_db():
         return create_conversation(test_db)
+
     return _add_conversation_to_db
+
 
 @pytest.fixture(scope="function")
 def create_user_in_db(test_db) -> int:
     """Add a user to the database and return its ID."""
+
     def _create_user_in_db(username: str, password: str):
         return create_user(test_db, username, password)
 
     return _create_user_in_db
 
+
 @pytest.fixture(scope="function")
 def add_document_to_db(test_db) -> int:
     """Add a document to the database and return its ID."""
+
     def _add_document_to_db():
         return create_document(test_db)
+
     return _add_document_to_db
+
 
 @pytest.fixture(scope="function")
 def add_connected_agent_conversation_to_db(test_db) -> tuple[int, int]:
     """Add an agent and conversation to the database and return their IDs."""
+
     def _add_connected_agent_conversation_to_db():
         agent_id = create_agent(test_db)
         conversation_id = create_conversation(test_db)
         connect_agent_to_conversation(test_db, conversation_id, agent_id)
         return agent_id, conversation_id
+
     return _add_connected_agent_conversation_to_db
+
 
 @pytest.fixture(scope="function")
 def add_documents_with_file_names(test_db):
@@ -76,7 +92,9 @@ def add_documents_with_file_names(test_db):
             update_document(test_db, doc_id, file_path=file_path)
             doc_ids.append(doc_id)
         return doc_ids
+
     return _add_documents_with_file_names
+
 
 # @pytest.fixture(scope="function")
 # @pytest.mark.parametrize("temp_files", [
@@ -94,11 +112,10 @@ def add_documents_with_file_names(test_db):
 #         doc_id = update_document()
 
 
-
 @pytest.fixture(scope="function")
 def temp_files(request):
     """Create temporary files and return their details.
-    
+
     Usage:
     @pytest.mark.parametrize("temp_files", [
         [{'name': 'file1', 'contents': 'file1 contents', 'suffix': '.tmp'}],
@@ -110,23 +127,23 @@ def temp_files(request):
     temp_file_details = []
 
     for config in file_configs:
-        file_name = config.get('name', 'temp_file')
-        contents = config.get('contents', '')
-        suffix = config.get('suffix', '.tmp')
+        file_name = config.get("name", "temp_file")
+        contents = config.get("contents", "")
+        suffix = config.get("suffix", ".tmp")
 
         fd, path = tempfile.mkstemp(suffix=suffix)
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(contents)
 
-        temp_file_details.append({'path': path, 'name': file_name, 'suffix': suffix})
-    
+        temp_file_details.append({"path": path, "name": file_name, "suffix": suffix})
+
     yield temp_file_details
 
     for file_detail in temp_file_details:
-        path = file_detail['path']
+        path = file_detail["path"]
         if os.path.exists(path):
-            os.remove(file_detail['path'])
+            os.remove(file_detail["path"])
 
 
 def clear_db(db_session: Session):

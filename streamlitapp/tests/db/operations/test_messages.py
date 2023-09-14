@@ -1,5 +1,6 @@
 from perry.db.operations.messages import create_message, get_messages_by_user
 
+
 def test_create_message(test_db, create_user_in_db):
     username = "lancelot"
     password = "blue"
@@ -14,6 +15,7 @@ def test_create_message(test_db, create_user_in_db):
     assert created_message.role == role
     assert created_message.message == message_text
 
+
 def test_get_messages_by_user(test_db, create_user_in_db):
     username = "arthur"
     password = "grail"
@@ -27,4 +29,3 @@ def test_get_messages_by_user(test_db, create_user_in_db):
     assert len(messages) == 2
     for message in messages:
         assert message.user_id == user_id
-

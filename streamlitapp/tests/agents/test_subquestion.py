@@ -7,6 +7,7 @@ from perry.db.operations.documents import update_document
 def get_subquestion_config():
     return SubquestionConfig(name="test", language_model_name="test", temperature=0.3)
 
+
 @pytest.fixture(scope="function")
 def create_subquestion_agent(
     test_db, add_connected_agent_conversation_to_db
@@ -24,25 +25,28 @@ def create_subquestion_agent(
 
     return _create_agent
 
+
 @pytest.fixture(scope="function")
 def create_subquestion_agent_with_documents(
     test_db,
     create_subquestion_agent,
     add_documents_with_file_names,
-    add_connected_agent_conversation_to_db
-    ):
+    add_connected_agent_conversation_to_db,
+):
     def _create_subquestion_agent_with_documents(file_paths: list[str]):
         agent_id, conversation_id = add_connected_agent_conversation_to_db()
         document_ids = add_documents_with_file_names(file_paths)
-        for document_id in document_ids:  
-          update_document(test_db, document_id, conversation_ids=[conversation_id])
+        for document_id in document_ids:
+            update_document(test_db, document_id, conversation_ids=[conversation_id])
         agent = SubquestionAgent(
             test_db,
             get_subquestion_config(),
             agent_id,
         )
         return agent, document_ids
+
     return _create_subquestion_agent_with_documents
+
 
 @pytest.mark.parametrize(
     "temp_files",

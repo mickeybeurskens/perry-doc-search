@@ -9,8 +9,10 @@ def create_agent(session: Session):
     session.commit()
     return new_agent.id
 
+
 def read_agent(session: Session, agent_id):
     return session.query(Agent).filter_by(id=agent_id).first()
+
 
 def delete_agent(session: Session, agent_id):
     agent = session.query(Agent).filter_by(id=agent_id).first()
@@ -19,6 +21,7 @@ def delete_agent(session: Session, agent_id):
     session.delete(agent)
     session.commit()
     return True
+
 
 def update_config(session: Session, agent_id: int, config_data: dict):
     agent = session.query(Agent).filter_by(id=agent_id).first()

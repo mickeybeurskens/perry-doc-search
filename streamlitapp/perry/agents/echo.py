@@ -4,7 +4,8 @@ from perry.db.models import Agent
 
 
 class EchoAgent(BaseAgent):
-    """ An agent that echoes the query. """
+    """An agent that echoes the query."""
+
     def _setup(self):
         pass
 
@@ -15,5 +16,7 @@ class EchoAgent(BaseAgent):
         pass
 
     @classmethod
-    def _on_load(cls, db_session: Session, config: BaseAgentConfig, agent_id: int) -> BaseAgent:
+    def _on_load(
+        cls, db_session: Session, config: BaseAgentConfig, agent_id: int
+    ) -> BaseAgent:
         return cls(db_session, config, agent_id)

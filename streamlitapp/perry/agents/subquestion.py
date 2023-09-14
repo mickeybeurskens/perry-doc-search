@@ -59,7 +59,9 @@ class SubquestionAgent(BaseAgent):
         pass
 
     @classmethod
-    def _on_load(cls, db_session: Session, config: SubquestionConfig, agent_id: int) -> BaseAgent:
+    def _on_load(
+        cls, db_session: Session, config: SubquestionConfig, agent_id: int
+    ) -> BaseAgent:
         return cls(db_session, config, agent_id)
 
     def _get_doc_paths(self) -> list[Path]:
@@ -101,7 +103,7 @@ class SubquestionAgent(BaseAgent):
     #                 index = load_index_from_storage(storage_context)
     #             except FileNotFoundError:
     #                 raise FileNotFoundError(f"Index for {name} not found in cache at location '{Path(self._cache_path, name)}'")
-    #         else: 
+    #         else:
     #             index = VectorStoreIndex.from_documents(
     #                 doc_sets[name],
     #                 service_context=self._service_context
@@ -110,7 +112,7 @@ class SubquestionAgent(BaseAgent):
     #         indexes_info[name] = index
 
     #     return indexes_info
-    
+
     # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:
     #     file_summaries = {}
     #     for file_path in file_paths:
@@ -139,9 +141,7 @@ class SubquestionAgent(BaseAgent):
     #     reader = SimpleDirectoryReader(input_files=self._source_data_paths)
     #     file_summaries = self._get_file_summaries(self._source_data_paths)
     #     docs = reader.load_data()
-        
+
     #     docs_grouped = self.group_docs_by_file_name(docs)
     #     doc_indexes = self._create_file_indexes(docs_grouped)
     #     return self._create_subquestion_engine(doc_indexes, file_summaries)
-        
-

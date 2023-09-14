@@ -17,6 +17,7 @@ agents_to_test = [
     # Add other agents and their configurations here
 ]
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("agent_class, config", agents_to_test)
 async def test_agent_query_returns_string(

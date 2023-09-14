@@ -21,7 +21,7 @@ def get_message_save_dir() -> pathlib.Path:
     if not path.exists():
         path.mkdir(parents=True)
     return path
-    
+
 
 def save_message_history(message_history: MessageHistory, path: pathlib.Path) -> None:
     file_name = f"message_history_{message_history.index}.json"

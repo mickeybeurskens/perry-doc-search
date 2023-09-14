@@ -6,8 +6,10 @@ import pydantic
 from dotenv import load_dotenv
 
 
-def save_pydantic_instance(model_instance: pydantic.BaseModel, path: pathlib.Path) -> None:
-    """ Save a pydantic instance to a json file. 
+def save_pydantic_instance(
+    model_instance: pydantic.BaseModel, path: pathlib.Path
+) -> None:
+    """Save a pydantic instance to a json file.
     args:
         model_instance: pydantic instance to save
         path: pathlib.Path to save the instance to
@@ -16,8 +18,10 @@ def save_pydantic_instance(model_instance: pydantic.BaseModel, path: pathlib.Pat
         f.write(pickle.dumps(model_instance.dict()))
 
 
-def load_pydantic_instance(model_class: pydantic.BaseModel, path: pathlib.Path) -> pydantic.BaseModel:
-    """ Load a pydantic instance from a json file. 
+def load_pydantic_instance(
+    model_class: pydantic.BaseModel, path: pathlib.Path
+) -> pydantic.BaseModel:
+    """Load a pydantic instance from a json file.
     args:
         model_class: pydantic class to load, not the instance
         path: pathlib.Path to load the instance from
@@ -27,7 +31,8 @@ def load_pydantic_instance(model_class: pydantic.BaseModel, path: pathlib.Path) 
     with open(path, "rb") as f:
         pickle_data = f.read()
     instance = model_class.parse_raw(
-        pickle_data, content_type='application/pickle', allow_pickle=True)   
+        pickle_data, content_type="application/pickle", allow_pickle=True
+    )
     return instance
 
 

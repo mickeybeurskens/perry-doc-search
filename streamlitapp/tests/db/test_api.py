@@ -7,16 +7,15 @@ from perry.db.operations.agents import create_agent
 
 @pytest.mark.usefixtures("test_db")
 class TestConnectAgentToConversation:
-
     def test_connect_when_both_exist(self, test_db):
         agent = Agent(id=1)
         conversation = Conversation(id=1)
         test_db.add(agent)
         test_db.add(conversation)
         test_db.commit()
-        
+
         assert connect_agent_to_conversation(test_db, 1, 1)
-        
+
         updated_agent = test_db.query(Agent).filter_by(id=1).first()
         assert updated_agent.conversation_id == 1
 
