@@ -2,7 +2,7 @@ import pytest
 from perry.agents.echo import EchoAgent
 from perry.agents.base import BaseAgentConfig, BaseAgent
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
-from perry.db.api import connect_agent_to_conversation
+from perry.db.operations.agents import update_agent
 
 agents_to_test = [
     (EchoAgent, BaseAgentConfig(name="EchoAgentTest")),
@@ -25,7 +25,7 @@ async def test_agent_query_returns_string(
 ):
     agent_id = add_agent_to_db()
     conversation_id = add_conversation_to_db()
-    connect_agent_to_conversation(test_db, agent_id, conversation_id)
+    update_agent(test_db, agent_id, conversation_id=conversation_id)
     agent_instance = agent_class(test_db, config, agent_id)
     response = await agent_instance.query("test query")
     assert isinstance(response, str)
@@ -37,7 +37,7 @@ def test_load_should_return_agent_instance(
 ):
     agent_id = add_agent_to_db()
     conversation_id = add_conversation_to_db()
-    connect_agent_to_conversation(test_db, agent_id, conversation_id)
+    update_agent(test_db, agent_id, conversation_id=conversation_id)
     agent = agent_class(test_db, config, agent_id)
     agent.save()
     loaded_agent = agent_class.load(test_db, agent.id)

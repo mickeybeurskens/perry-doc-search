@@ -4,11 +4,10 @@ import pytest
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, Session
 from perry.db.models import Base
-from perry.db.operations.agents import create_agent
+from perry.db.operations.agents import create_agent, update_agent
 from perry.db.operations.conversations import create_conversation, update_conversation
 from perry.db.operations.documents import create_document, update_document
 from perry.db.operations.users import create_user
-from perry.db.api import connect_agent_to_conversation
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -77,7 +76,7 @@ def add_connected_agent_conversation_to_db(test_db) -> tuple[int, int]:
     def _add_connected_agent_conversation_to_db():
         agent_id = create_agent(test_db)
         conversation_id = create_conversation(test_db)
-        connect_agent_to_conversation(test_db, conversation_id, agent_id)
+        update_agent(test_db, agent_id, conversation_id=conversation_id)
         return agent_id, conversation_id
 
     return _add_connected_agent_conversation_to_db

@@ -30,3 +30,14 @@ def update_config(session: Session, agent_id: int, config_data: dict):
     agent.config = config_data
     session.commit()
     return True
+
+def update_agent(session: Session, agent_id: int, conversation_id: int = None, config_data: dict = None):
+    agent = session.query(Agent).filter_by(id=agent_id).first()
+    if not agent:
+        return None
+    if conversation_id:
+        agent.conversation_id = conversation_id
+    if config_data:
+        agent.config = config_data
+    session.commit()
+    return True
