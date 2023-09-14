@@ -33,7 +33,9 @@ def test_db(create_test_db) -> Session:
 @pytest.fixture(scope="function")
 def add_agent_to_db(test_db) -> int:
     """Add an agent to the database and return its ID."""
-    return create_agent(test_db)
+    def _add_agent_to_db():
+        return create_agent(test_db)
+    return _add_agent_to_db
 
 @pytest.fixture(scope="function")
 def add_conversation_to_db(test_db) -> int:
@@ -62,7 +64,9 @@ def create_connected_agent_conversation_in_db(
     test_db, add_agent_to_db, add_conversation_to_db
 ) -> tuple[int, int]:
     """Add an agent and a conversation to the database, connect them and return their IDs."""
-    connect_agent_to_conversation(test_db, add_agent_to_db(), add_conversation_to_db())
+    agent_id = add_agent_to_db()
+    conversation_id = add_conversation_to_db()
+    connect_agent_to_conversation(test_db, agent_id, conversation_id)
     return add_agent_to_db, add_conversation_to_db
 
 # @pytest.fixture(scope="function")

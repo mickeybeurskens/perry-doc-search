@@ -16,32 +16,23 @@ agents_to_test = [
     # Add other agents and their configurations here
 ]
 
-
-@pytest.fixture(scope="function")
-def set_up_new_agent(test_db, create_connected_agent_conversation_in_db):
-    agent_id, _ = create_connected_agent_conversation_in_db
-
-    def _agent_setup(agent_class, config):
-        return agent_class(test_db, config, agent_id)
-
-    return _agent_setup
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize("agent_class, config", agents_to_test)
 async def test_agent_query_returns_string(
-    agent_class, config, set_up_new_agent
+    test_db, agent_class, config, create_connected_agent_conversation_in_db
 ):
-    agent_instance = set_up_new_agent(agent_class, config)
+    agent_id, _ = create_connected_agent_conversation_in_db
+    agent_instance = agent_class(test_db, config, agent_id)
     response = await agent_instance.query("test query")
     assert isinstance(response, str)
 
 
 @pytest.mark.parametrize("agent_class, config", agents_to_test)
 def test_load_should_return_agent_instance(
-    agent_class, test_db, config, set_up_new_agent
+    agent_class, test_db, config, create_connected_agent_conversation_in_db
 ):
-    agent = set_up_new_agent(agent_class, config)
+    agent_id, _ = create_connected_agent_conversation_in_db
+    agent = agent_class(test_db, config, agent_id)
     agent.save()
     loaded_agent = agent_class.load(test_db, agent.id)
 
