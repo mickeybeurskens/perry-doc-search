@@ -7,18 +7,21 @@ def test_create_conversation(test_db):
     assert conv is not None
 
 def test_read_conversation(test_db, add_conversation_to_db):
-    conv = read_conversation(test_db, add_conversation_to_db)
+    conv_id = add_conversation_to_db()
+    conv = read_conversation(test_db, conv_id)
     assert conv is not None
-    assert conv.id == add_conversation_to_db
+    assert conv.id == conv_id
 
 def test_update_conversation(test_db, add_conversation_to_db):
-    updated_conv = update_conversation(test_db, add_conversation_to_db, 2)
+    conv_id = add_conversation_to_db()
+    updated_conv = update_conversation(test_db, conv_id, 2)
     assert updated_conv is not None
     assert updated_conv.user_id == 2
 
 def test_delete_conversation(test_db, add_conversation_to_db):
-    assert delete_conversation(test_db, add_conversation_to_db) is True
-    conv = read_conversation(test_db, add_conversation_to_db)
+    conv_id = add_conversation_to_db()
+    assert delete_conversation(test_db, conv_id) is True
+    conv = read_conversation(test_db, conv_id)
     assert conv is None
 
 def test_update_nonexistent_conversation(test_db):

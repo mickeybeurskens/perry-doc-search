@@ -15,7 +15,7 @@ def test_create_user(test_db):
 def test_get_user(test_db, create_user_in_db):
     username = "arthur"
     password = "dent"
-    created_user = create_user_in_db(test_db, username, password)
+    created_user = create_user_in_db(username, password)
     
     retrieved_user = get_user(test_db, created_user.id)
     
