@@ -29,7 +29,6 @@ def create_subquestion_agent(
 @pytest.fixture(scope="function")
 def create_subquestion_agent_with_documents(
     test_db,
-    create_subquestion_agent,
     add_documents_with_file_names,
     add_connected_agent_conversation_to_db,
 ):
