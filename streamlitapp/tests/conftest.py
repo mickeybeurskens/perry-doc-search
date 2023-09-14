@@ -6,8 +6,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from perry.db.models import Base
 from perry.db.operations.agents import create_agent
 from perry.db.operations.conversations import create_conversation, update_conversation
-from perry.db.operations.documents import create_document
+from perry.db.operations.documents import create_document, update_document
 from perry.db.operations.users import create_user
+from perry.db.api import connect_agent_to_conversation
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -42,7 +43,7 @@ def add_conversation_to_db(test_db) -> int:
     return _add_conversation_to_db
 
 @pytest.fixture(scope="function")
-def create_user_in_db(test_db):
+def create_user_in_db(test_db) -> int:
     """Add a user to the database and return its ID."""
     def _create_user_in_db(username: str, password: str):
         return create_user(test_db, username, password)
@@ -50,11 +51,32 @@ def create_user_in_db(test_db):
     return _create_user_in_db
 
 @pytest.fixture(scope="function")
-def add_document_to_db(test_db):
+def add_document_to_db(test_db) -> int:
     """Add a document to the database and return its ID."""
     def _add_document_to_db():
         return create_document(test_db)
     return _add_document_to_db
+
+@pytest.fixture(scope="function")
+def add_connected_agent_conversation_to_db(test_db) -> tuple[int, int]:
+    """Add an agent and conversation to the database and return their IDs."""
+    def _add_connected_agent_conversation_to_db():
+        agent_id = create_agent(test_db)
+        conversation_id = create_conversation(test_db)
+        connect_agent_to_conversation(test_db, conversation_id, agent_id)
+        return agent_id, conversation_id
+    return _add_connected_agent_conversation_to_db
+
+@pytest.fixture(scope="function")
+def add_documents_with_file_names(test_db):
+    def _add_documents_with_file_names(file_paths: list[str]):
+        doc_ids = []
+        for file_path in file_paths:
+            doc_id = create_document(test_db)
+            update_document(test_db, doc_id, file_path=file_path)
+            doc_ids.append(doc_id)
+        return doc_ids
+    return _add_documents_with_file_names
 
 # @pytest.fixture(scope="function")
 # @pytest.mark.parametrize("temp_files", [
