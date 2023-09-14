@@ -35,11 +35,11 @@ def test_should_return_none_when_trying_to_read_nonexistent_agent(test_db):
 def test_should_update_agent_config_given_valid_agent_id(test_db, add_agent_to_db):
     config_metadata = {"key": "value"}
     agent_id = add_agent_to_db()
-    assert update_config(test_db, agent_id, config_metadata) is True
+    assert update_agent(test_db, agent_id, config_data=config_metadata) is True
     agent = read_agent(test_db, agent_id)
     assert agent.config == config_metadata
 
 
 def test_should_return_none_when_updating_config_for_nonexistent_agent(test_db):
     config_metadata = {"key": "value"}
-    assert update_config(test_db, -1, config_metadata) is None
+    assert update_agent(test_db, -1, config_data=config_metadata) is None

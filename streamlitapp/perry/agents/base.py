@@ -4,7 +4,7 @@ from typing import Dict, Type
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from perry.db.models import Agent as DBAgent
-from perry.db.operations.agents import read_agent, update_config
+from perry.db.operations.agents import read_agent, update_agent
 
 
 class BaseAgentConfig(BaseModel):
@@ -34,7 +34,7 @@ class BaseAgent(ABC):
 
     def save(self):
         """Save the state of the agent."""
-        update_config(self._db_session, self.id, self.config.dict())
+        update_agent(self._db_session, self.id, config_data=self.config.dict())
         self._on_save()
 
     @classmethod
