@@ -128,10 +128,10 @@ def test_remove_user_from_document(test_db, add_document_to_db, create_user_in_d
     username = "galahad"
     password = "wise"
     created_document_id = add_document_to_db()
-    created_user = create_user_in_db(username=username, password=password)
-    update_document(test_db, created_document_id, user_ids=[created_user.id])
+    created_user_id = create_user_in_db(username=username, password=password)
+    update_document(test_db, created_document_id, user_ids=[created_user_id])
     
-    user = get_user(test_db, created_user.id)
+    user = get_user(test_db, created_user_id)
     document = get_document(test_db, created_document_id)
     
     assert user in document.users
@@ -157,8 +157,8 @@ def test_document_conversations_should_update(test_db, add_document_to_db, add_c
 def test_document_users_should_update(test_db, add_document_to_db, create_user_in_db):
     doc_id = add_document_to_db()
     user_ids = [
-        create_user_in_db(username="hari", password="seldon").id,
-        create_user_in_db(username="psychohistory", password="foundation").id
+        create_user_in_db(username="hari", password="seldon"),
+        create_user_in_db(username="psychohistory", password="foundation")
     ]  
     update_document(test_db, doc_id, user_ids=user_ids)
     updated_doc = get_document(test_db, doc_id)
