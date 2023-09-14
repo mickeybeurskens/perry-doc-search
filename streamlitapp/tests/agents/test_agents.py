@@ -18,8 +18,8 @@ agents_to_test = [
 
 
 @pytest.fixture(scope="function")
-def set_up_new_agent(test_db, add_connected_agent_and_conversation_to_db):
-    agent_id, _ = add_connected_agent_and_conversation_to_db
+def set_up_new_agent(test_db, create_connected_agent_conversation_in_db):
+    agent_id, _ = create_connected_agent_conversation_in_db
 
     def _agent_setup(agent_class, config):
         return agent_class(test_db, config, agent_id)
