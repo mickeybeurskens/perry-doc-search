@@ -8,7 +8,6 @@ from perry.db.operations.agents import create_agent
 from perry.db.operations.conversations import create_conversation, update_conversation
 from perry.db.operations.documents import create_document
 from perry.db.operations.users import create_user
-from perry.db.api import connect_agent_to_conversation
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -21,14 +20,12 @@ def create_test_db() -> Session:
     clear_db(session)
     return session
 
-
 @pytest.fixture(scope="function", autouse=True)
 def test_db(create_test_db) -> Session:
     """Empty database before each test and return."""
     clear_db(create_test_db)
 
     return create_test_db
-
 
 @pytest.fixture(scope="function")
 def add_agent_to_db(test_db) -> int:
@@ -58,16 +55,6 @@ def add_document_to_db(test_db):
     def _add_document_to_db():
         return create_document(test_db)
     return _add_document_to_db
-
-@pytest.fixture(scope="function")
-def create_connected_agent_conversation_in_db(
-    test_db, add_agent_to_db, add_conversation_to_db
-) -> tuple[int, int]:
-    """Add an agent and a conversation to the database, connect them and return their IDs."""
-    agent_id = add_agent_to_db()
-    conversation_id = add_conversation_to_db()
-    connect_agent_to_conversation(test_db, agent_id, conversation_id)
-    return add_agent_to_db, add_conversation_to_db
 
 # @pytest.fixture(scope="function")
 # @pytest.mark.parametrize("temp_files", [
