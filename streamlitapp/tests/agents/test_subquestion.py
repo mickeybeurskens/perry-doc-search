@@ -64,4 +64,6 @@ def test_doc_paths_from_connected_docs_should_be_returned(
     agent, document_ids = create_subquestion_agent_with_documents(file_paths=file_paths)
     assert len(agent._source_data_paths) == len(document_ids)
     for path in file_paths:
-        assert Path(path) in agent._source_data_paths
+        path = Path(path)
+        assert path in agent._source_data_paths
+        path.is_file()

@@ -22,7 +22,13 @@ def delete_agent(session: Session, agent_id):
     session.commit()
     return True
 
-def update_agent(session: Session, agent_id: int, conversation_id: int = None, config_data: dict = None):
+
+def update_agent(
+    session: Session,
+    agent_id: int,
+    conversation_id: int = None,
+    config_data: dict = None,
+):
     agent = session.query(Agent).filter_by(id=agent_id).first()
     if not agent:
         return None
