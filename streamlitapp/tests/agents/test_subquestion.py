@@ -97,3 +97,62 @@ def test_cache_exists_passes_when_all_files_and_directory_exist(monkeypatch):
         SubquestionAgent._cache_exists(directory)
     except FileNotFoundError:
         pytest.fail("FileNotFoundError raised when it shouldn't be.")
+
+
+@pytest.mark.parametrize(
+    "cache_exists, expected_call", [(True, "_load_index"), (False, "_create_index")]
+)
+def test_get_vector_indexes_should_call_appropriate_methods_based_on_cache_existence(
+    monkeypatch, cache_exists, expected_call, create_subquestion_agent
+):
+    mock_doc_sets = {1: ["doc1"], 2: ["doc2"]}
+    mock_load_index = lambda self, doc_id: f"Loaded {doc_id}"
+    mock_create_index = lambda self, doc_id, doc_set=None: f"Created {doc_id}"
+
+    monkeypatch.setattr(SubquestionAgent, "_cache_exists", lambda self, x: cache_exists)
+    monkeypatch.setattr(SubquestionAgent, "_load_index", mock_load_index)
+    monkeypatch.setattr(SubquestionAgent, "_create_index", mock_create_index)
+
+    agent = create_subquestion_agent()
+    result = agent._get_vector_indexes(mock_doc_sets)
+
+    assert result is not None
+    assert isinstance(result, dict)
+
+    for doc_id in mock_doc_sets.keys():
+        expected_output = (
+            getattr(agent, expected_call)(doc_id, mock_doc_sets.get(doc_id))
+            if expected_call == "_create_index"
+            else getattr(agent, expected_call)(doc_id)
+        )
+        assert result[doc_id] == expected_output
+
+
+@pytest.mark.parametrize(
+    "missing_file",
+    ["docstore.json", "index_store.json", "graph_store.json", "vector_store.json"],
+)
+def test_cache_exists_should_raise_error_when_required_file_is_missing(
+    monkeypatch, missing_file
+):
+    def mock_exists(path):
+        return not path.name == missing_file
+
+    monkeypatch.setattr(Path, "exists", mock_exists)
+    directory = Path("/some/random/directory")
+
+    with pytest.raises(FileNotFoundError, match=rf"{missing_file} not found in .*"):
+        SubquestionAgent._cache_exists(directory)
+
+
+def test_load_index_should_raise_error_if_cache_does_not_exist(monkeypatch, create_subquestion_agent):
+    mock_path = Path("/path/to/nonexistent/index")
+    monkeypatch.setattr(Path, "exists", lambda x: False)
+
+
+    with pytest.raises(
+        FileNotFoundError,
+        match=r"Vector index for document_id: .* not found in cache .*",
+    ):
+        agent = create_subquestion_agent()
+        agent._load_index(1)

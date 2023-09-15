@@ -33,6 +33,7 @@ class SubquestionConfig(BaseAgentConfig):
 
 class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
+    _cache_path = Path(".cache")
 
     def _setup(self):
         # self._cache_path = cache_dir
@@ -141,17 +142,18 @@ class SubquestionAgent(BaseAgent):
         return docs_grouped
 
     def _get_vector_indexes(
-        self, doc_sets: dict[str, list[Document]]
-    ) -> dict[str, VectorStoreIndex]:
+        self, doc_sets: dict[int, list[Document]]
+    ) -> dict[int, VectorStoreIndex]:
         indexes_info = {}
 
-        for name in doc_sets.keys():
-            save_path = Path(self._cache_path, doc_id)
+        for doc_id in doc_sets.keys():
+            save_path = Path(self._cache_path, str(doc_id))
 
             if self._cache_exists(save_path):
                 indexes_info[doc_id] = self._load_index(doc_id)
             else:
-                indexes_info[doc_id] = self._create_index(doc_id, doc_sets[name])
+                indexes_info[doc_id] = self._create_index(doc_id, doc_sets[doc_id])
+        return indexes_info
 
     @staticmethod
     def _cache_exists(directory: Path):
@@ -185,7 +187,7 @@ class SubquestionAgent(BaseAgent):
         index = VectorStoreIndex.from_documents(
             doc_set, service_context=self._service_context
         )
-        index.storage_context.persist(persist_dir=Path(self._cache_path, doc_id))
+        index.storage_context.persist(persist_dir=Path(self._cache_path, str(doc_id)))
         return index
 
     # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:

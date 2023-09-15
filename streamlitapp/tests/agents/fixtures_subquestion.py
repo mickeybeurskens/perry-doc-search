@@ -60,7 +60,7 @@ def create_temp_file(tmp_path: Path, content: str, name: str, suffix: str) -> Pa
 
 @pytest.fixture(scope="function")
 def create_subquestion_agent(
-    test_db, add_connected_agent_conversation_to_db
+    test_db, add_connected_agent_conversation_to_db, monkeypatch, tmp_path
 ) -> SubquestionAgent:
     """Add an agent to the database and return its ID."""
 
@@ -71,6 +71,7 @@ def create_subquestion_agent(
             get_subquestion_config(),
             agent_id,
         )
+        monkeypatch.setattr(SubquestionAgent, "_cache_path", tmp_path)
         return agent
 
     return _create_agent
@@ -82,6 +83,7 @@ def create_subquestion_agent_with_documents(
     add_documents_with_file_names,
     add_connected_agent_conversation_to_db,
     tmp_path,
+    monkeypatch
 ) -> tuple[SubquestionAgent, list[int], list[str]]:
     def _create_subquestion_agent_with_documents(file_info: list[dict[str, str, str]]):
         file_paths = [
@@ -100,6 +102,7 @@ def create_subquestion_agent_with_documents(
             get_subquestion_config(),
             agent_id,
         )
+        monkeypatch.setattr(SubquestionAgent, "_cache_path", tmp_path)
         return agent, document_ids, file_paths
 
     return _create_subquestion_agent_with_documents
