@@ -78,8 +78,8 @@ class SubquestionAgent(BaseAgent):
 
     def _create_engine(self):
         docs_grouped = self._load_docs()
+        doc_indexes = self._create_file_indexes(docs_grouped)
         print(docs_grouped)
-    #     doc_indexes = self._create_file_indexes(docs_grouped)
     #     return self._create_subquestion_engine(doc_indexes, file_summaries)
 
     def _load_docs(self) -> dict[str, list[Document]]:
@@ -100,28 +100,28 @@ class SubquestionAgent(BaseAgent):
             docs_grouped[file_name].append(doc)
         return docs_grouped
 
-    # def _create_file_indexes(self, doc_sets: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
-    #     indexes_info = {}
+    def _create_file_indexes(self, doc_sets: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
+        indexes_info = {}
 
-    #     for name in doc_sets.keys():
-    #         if self._from_cache:
-    #             try:
-    #                 print(f"Loading index for {name} from cache for {self.__class__.__name__}")
-    #                 storage_context = StorageContext.from_defaults(
-    #                     persist_dir=Path(self._cache_path, name),
-    #                 )
-    #                 index = load_index_from_storage(storage_context)
-    #             except FileNotFoundError:
-    #                 raise FileNotFoundError(f"Index for {name} not found in cache at location '{Path(self._cache_path, name)}'")
-    #         else:
-    #             index = VectorStoreIndex.from_documents(
-    #                 doc_sets[name],
-    #                 service_context=self._service_context
-    #             )
-    #             index.storage_context.persist(persist_dir=Path(self._cache_path, name))
-    #         indexes_info[name] = index
+        for name in doc_sets.keys():
+            if self._from_cache:
+                try:
+                    print(f"Loading index for {name} from cache for {self.__class__.__name__}")
+                    storage_context = StorageContext.from_defaults(
+                        persist_dir=Path(self._cache_path, name),
+                    )
+                    index = load_index_from_storage(storage_context)
+                except FileNotFoundError:
+                    raise FileNotFoundError(f"Index for {name} not found in cache at location '{Path(self._cache_path, name)}'")
+            else:
+                index = VectorStoreIndex.from_documents(
+                    doc_sets[name],
+                    service_context=self._service_context
+                )
+                index.storage_context.persist(persist_dir=Path(self._cache_path, name))
+            indexes_info[name] = index
 
-    #     return indexes_info
+        return indexes_info
 
     # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:
     #     file_summaries = {}

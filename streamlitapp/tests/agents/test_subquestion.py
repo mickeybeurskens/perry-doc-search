@@ -21,7 +21,6 @@ def create_temp_file(tmp_path: Path, content: str, name: str, suffix: str) -> Pa
 
         return str(temp_file_path)
     else:
-        # Create a temporary file
         temp_file_path = tmp_path / Path(name + suffix)
         with open(temp_file_path, "w") as f:
             f.write(content)
@@ -123,11 +122,12 @@ def test_should_group_multiple_pdfs_with_same_filename_together(
     assert len(result["duplicate.pdf"]) == 2
 
 
-def test_should_raise_exception_for_non_pdf_file(create_subquestion_agent_with_documents):
+def test_should_raise_exception_for_non_pdf_file(
+    create_subquestion_agent_with_documents,
+):
     file_info = [
         {"content": "test", "name": "textfile", "suffix": ".txt"},
         {"content": "test", "name": "pdffile", "suffix": ".pdf"},
     ]
     with pytest.raises(Exception, match=r".*should be a PDF file"):
         agent, _, _ = create_subquestion_agent_with_documents(file_info=file_info)
-        
