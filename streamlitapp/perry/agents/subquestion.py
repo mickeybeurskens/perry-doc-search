@@ -63,9 +63,10 @@ class SubquestionAgent(BaseAgent):
     ) -> BaseAgent:
         return cls(db_session, config, agent_id)
 
-    def _get_doc_paths(self) -> list[Path]:
+    def _get_doc_paths(self) -> dict[int, Path]:
+        """Return a list of paths to the documents in the conversation with ids as dictionary keys."""
         documents = self._agent_data.conversation.documents
-        doc_paths = []
+        doc_paths = {}
         for document in documents:
             doc_path = Path(document.file_path)
 
@@ -73,13 +74,15 @@ class SubquestionAgent(BaseAgent):
                 raise Exception(f"Source data '{doc_path}' is not a file")
             if not doc_path.suffix.lower() == ".pdf":
                 raise Exception(f"Source data '{doc_path}' should be a PDF file")
-            doc_paths.append(doc_path)
+            doc_paths[document.id] = doc_path
         return doc_paths
 
     def _create_engine(self):
-        docs_grouped = self._load_docs()
-        doc_indexes = self._create_file_indexes(docs_grouped)
-        print(docs_grouped)
+        pass
+        # docs_grouped = self._load_docs()
+        # doc_vector_indexes = self._get_vector_indexes(docs_grouped)
+        # print(docs_grouped)
+
     #     return self._create_subquestion_engine(doc_indexes, file_summaries)
 
     def _load_docs(self) -> dict[str, list[Document]]:
@@ -87,7 +90,7 @@ class SubquestionAgent(BaseAgent):
         file_paths = self._get_doc_paths()
         if len(file_paths) == 0:
             return docs_grouped
-        
+
         reader = SimpleDirectoryReader(input_files=file_paths)
         docs = reader.load_data()
         for doc in docs:
@@ -100,28 +103,35 @@ class SubquestionAgent(BaseAgent):
             docs_grouped[file_name].append(doc)
         return docs_grouped
 
-    def _create_file_indexes(self, doc_sets: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
+    def _get_vector_indexes(
+        self, doc_sets: dict[str, list[Document]]
+    ) -> dict[str, VectorStoreIndex]:
         indexes_info = {}
 
         for name in doc_sets.keys():
             if self._from_cache:
-                try:
-                    print(f"Loading index for {name} from cache for {self.__class__.__name__}")
-                    storage_context = StorageContext.from_defaults(
-                        persist_dir=Path(self._cache_path, name),
-                    )
-                    index = load_index_from_storage(storage_context)
-                except FileNotFoundError:
-                    raise FileNotFoundError(f"Index for {name} not found in cache at location '{Path(self._cache_path, name)}'")
+                pass
             else:
-                index = VectorStoreIndex.from_documents(
-                    doc_sets[name],
-                    service_context=self._service_context
-                )
-                index.storage_context.persist(persist_dir=Path(self._cache_path, name))
-            indexes_info[name] = index
+                pass
 
-        return indexes_info
+    # def _load_indexes(self, doc_id: int) -> VectorStoreIndex:
+    #     try:
+    #         print(f"Loading index for {doc_path} from cache for {self.__class__.__name__}")
+    #         storage_context = StorageContext.from_defaults(
+    #             persist_dir=Path(doc_path),
+    #         )
+    #         return load_index_from_storage(storage_context)
+    #     except FileNotFoundError:
+    #         raise FileNotFoundError(f"Index for {doc_path} not found in cache at location")
+
+    # def _create_indexes(self, doc_id: int, doc_set: list[Document]) -> VectorStoreIndex:
+
+    #     index = VectorStoreIndex.from_documents(
+    #         doc_set,
+    #         service_context=self._service_context
+    #     )
+    #     index.storage_context.persist(persist_dir=Path(self._cache_path, doc_path))
+    #     return str(doc_path), index
 
     # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:
     #     file_summaries = {}
@@ -146,5 +156,3 @@ class SubquestionAgent(BaseAgent):
     #         query_engine_tools=tools,
     #         service_context=self._service_context,
     #     )
-
-  
