@@ -145,10 +145,10 @@ def test_cache_exists_should_raise_error_when_required_file_is_missing(
         SubquestionAgent._cache_exists(directory)
 
 
-def test_load_index_should_raise_error_if_cache_does_not_exist(monkeypatch, create_subquestion_agent):
-    mock_path = Path("/path/to/nonexistent/index")
+def test_load_index_should_raise_error_if_cache_does_not_exist(
+    monkeypatch, create_subquestion_agent
+):
     monkeypatch.setattr(Path, "exists", lambda x: False)
-
 
     with pytest.raises(
         FileNotFoundError,
