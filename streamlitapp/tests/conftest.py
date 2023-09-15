@@ -95,22 +95,6 @@ def add_documents_with_file_names(test_db):
     return _add_documents_with_file_names
 
 
-# @pytest.fixture(scope="function")
-# @pytest.mark.parametrize("temp_files", [
-#     [{'name': 'file1', 'contents': 'file1 contents', 'suffix': '.pdf'}],
-#     [{'name': 'file2', 'contents': 'file2 contents', 'suffix': '.pdf'}],
-#     [{'name': 'file3', 'contents': 'file3 contents', 'suffix': '.pdf'}],
-# ], indirect=True)
-# def create_connected_agent_conversation_in_db_with_docs(
-#     create_connected_agent_conversation_in_db, create_user_in_db, temp_files, test_db
-# ):
-#     agent_id, conversation_id = create_connected_agent_conversation_in_db
-#     user_id = create_user_in_db(test_db, 'test_user', 'test_password')
-#     for file_path in temp_files:
-#         doc_id = create_document(test_db)
-#         doc_id = update_document()
-
-
 @pytest.fixture(scope="function")
 def temp_files(request):
     """Create temporary files and return their details.

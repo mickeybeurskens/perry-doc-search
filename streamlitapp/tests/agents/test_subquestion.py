@@ -1,11 +1,27 @@
+from io import BytesIO
+import base64
 import pytest
 from pathlib import Path
+from fpdf import FPDF
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
 from perry.db.operations.documents import update_document
 
 
 def get_subquestion_config():
     return SubquestionConfig(name="test", language_model_name="test", temperature=0.3)
+
+
+def create_temp_pdf(tmp_path: Path, content: str, name: str) -> Path:
+    temp_file_path = tmp_path / Path(name + ".pdf")
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, content, ln=1, align="C")
+    
+    pdf.output(name=temp_file_path, dest="F")
+    
+    return str(temp_file_path)
 
 
 @pytest.fixture(scope="function")
@@ -47,23 +63,18 @@ def create_subquestion_agent_with_documents(
     return _create_subquestion_agent_with_documents
 
 
-@pytest.mark.parametrize(
-    "temp_files",
-    [
-        [
-            {"name": "file1", "contents": "Hello1", "suffix": ".pdf"},
-            {"name": "file2", "contents": "Hello2", "suffix": ".pdf"},
-        ]
-    ],
-    indirect=True,
-)
 def test_doc_paths_from_connected_docs_should_be_returned(
-    temp_files, create_subquestion_agent_with_documents
+    tmp_path, create_subquestion_agent_with_documents
 ):
-    file_paths = [temp_file["path"] for temp_file in temp_files]
+    file_info = [
+        {"content": "test", "name": "test"},
+        {"content": "test2", "name": "test2"},
+    ]
+    file_paths = [create_temp_pdf(tmp_path, file_info["content"], file_info["name"]) for file_info in file_info]
     agent, document_ids = create_subquestion_agent_with_documents(file_paths=file_paths)
-    assert len(agent._source_data_paths) == len(document_ids)
+    source_data_paths = agent._get_doc_paths()
+    assert len(source_data_paths) == len(document_ids)
     for path in file_paths:
         path = Path(path)
-        assert path in agent._source_data_paths
+        assert path in source_data_paths
         path.is_file()

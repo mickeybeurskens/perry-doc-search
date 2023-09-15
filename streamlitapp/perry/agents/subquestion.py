@@ -36,7 +36,6 @@ class SubquestionAgent(BaseAgent):
     def _setup(self):
         load_dotenv()
 
-        self._source_data_paths = self._get_doc_paths()
         # self._cache_path = cache_dir
         # self._from_cache = from_cache
 
@@ -50,7 +49,7 @@ class SubquestionAgent(BaseAgent):
         #     # callback_manager=callback_manager,
         # )
 
-        # self._engine = self._create_engine()
+        self._engine = self._create_engine()
 
     async def query(self, query: str) -> str:
         return self._engine.aquery(query)
@@ -77,18 +76,27 @@ class SubquestionAgent(BaseAgent):
             doc_paths.append(doc_path)
         return doc_paths
 
-    # @staticmethod
-    # def _group_docs_by_file_name(docs: list[Document]) -> dict[str, list[Document]]:
-    #     docs_grouped = {}
-    #     for doc in docs:
-    #         if doc.metadata.get("file_name") is None:
-    #             file_name = "NO_FILE_NAME"
-    #         else:
-    #             file_name = doc.metadata["file_name"]
-    #         if file_name not in docs_grouped.keys():
-    #             docs_grouped[file_name] = []
-    #         docs_grouped[file_name].append(doc)
-    #     return docs_grouped
+    def _create_engine(self):
+        reader = SimpleDirectoryReader(input_files=self._get_doc_paths())
+        docs = reader.load_data()
+
+        docs_grouped = self._group_docs_by_file_name(docs)
+        print(docs_grouped)
+    #     doc_indexes = self._create_file_indexes(docs_grouped)
+    #     return self._create_subquestion_engine(doc_indexes, file_summaries)
+
+    @staticmethod
+    def _group_docs_by_file_name(docs: list[Document]) -> dict[str, list[Document]]:
+        docs_grouped = {}
+        for doc in docs:
+            if doc.metadata.get("file_name") is None:
+                file_name = "NO_FILE_NAME"
+            else:
+                file_name = doc.metadata["file_name"]
+            if file_name not in docs_grouped.keys():
+                docs_grouped[file_name] = []
+            docs_grouped[file_name].append(doc)
+        return docs_grouped
 
     # def _create_file_indexes(self, doc_sets: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
     #     indexes_info = {}
@@ -137,11 +145,4 @@ class SubquestionAgent(BaseAgent):
     #         service_context=self._service_context,
     #     )
 
-    # def _create_engine(self):
-    #     reader = SimpleDirectoryReader(input_files=self._source_data_paths)
-    #     file_summaries = self._get_file_summaries(self._source_data_paths)
-    #     docs = reader.load_data()
-
-    #     docs_grouped = self.group_docs_by_file_name(docs)
-    #     doc_indexes = self._create_file_indexes(docs_grouped)
-    #     return self._create_subquestion_engine(doc_indexes, file_summaries)
+  
