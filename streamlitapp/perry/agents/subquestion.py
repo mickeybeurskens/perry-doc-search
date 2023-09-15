@@ -12,6 +12,7 @@ from llama_index import (
 )
 from llama_index.tools import QueryEngineTool, ToolMetadata
 from llama_index.llms import OpenAI
+from llama_index.llms.base import LLM
 from llama_index.query_engine import SubQuestionQueryEngine
 from llama_index.callbacks import CallbackManager, LlamaDebugHandler
 from dotenv import load_dotenv
@@ -34,8 +35,6 @@ class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
 
     def _setup(self):
-        load_dotenv()
-
         # self._cache_path = cache_dir
         # self._from_cache = from_cache
 
@@ -48,7 +47,11 @@ class SubquestionAgent(BaseAgent):
         #     llm=llm,
         #     # callback_manager=callback_manager,
         # )
-
+        self._service_context = self._get_new_service_context(
+            self._get_new_model(
+                self.config.language_model_name, self.config.temperature
+            )
+        )
         self._engine = self._create_engine()
 
     async def query(self, query: str) -> str:
@@ -63,6 +66,23 @@ class SubquestionAgent(BaseAgent):
     ) -> BaseAgent:
         return cls(db_session, config, agent_id)
 
+    @classmethod
+    @staticmethod
+    def _get_config_instance(config_data: dict) -> SubquestionConfig:
+        return SubquestionConfig(**config_data)
+
+    @staticmethod
+    def _get_new_model(model: str, temperature: float) -> LLM:
+        load_dotenv()
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        return OpenAI(temperature=temperature, model=model)
+
+    @staticmethod
+    def _get_new_service_context(llm: OpenAI) -> ServiceContext:
+        return ServiceContext.from_defaults(
+            llm=llm,
+        )
+
     def _get_doc_paths(self) -> dict[int, Path]:
         """Return a list of paths to the documents in the conversation with ids as dictionary keys."""
         documents = self._agent_data.conversation.documents
@@ -75,14 +95,14 @@ class SubquestionAgent(BaseAgent):
 
     def _validate_pdf_path(self, doc_path: Path):
         if not doc_path.is_file():
-            raise Exception(f"The specified path '{doc_path}' does not point to a file.")
+            raise Exception(
+                f"The specified path '{doc_path}' does not point to a file."
+            )
         if doc_path.suffix.lower() != ".pdf":
             raise Exception(f"The file at '{doc_path}' is not a PDF.")
 
-
     def _create_engine(self):
-        pass
-        # docs_grouped = self._load_docs()
+        docs_grouped = self._load_docs()
         # doc_vector_indexes = self._get_vector_indexes(docs_grouped)
         # print(docs_grouped)
 
@@ -99,14 +119,18 @@ class SubquestionAgent(BaseAgent):
 
         return self._group_docs_by_id(file_paths, pages_grouped)
 
-    def _group_pages_by_filename(self, pages: list[Document]) -> dict[str, list[Document]]:
+    def _group_pages_by_filename(
+        self, pages: list[Document]
+    ) -> dict[str, list[Document]]:
         pages_grouped = {}
         for page in pages:
             file_name = page.metadata.get("file_name", "NO_FILE_NAME")
             pages_grouped.setdefault(file_name, []).append(page)
         return pages_grouped
 
-    def _group_docs_by_id(self, file_paths: dict[int, Path], pages_grouped: dict[str, list[Document]]) -> dict[int, list[Document]]:
+    def _group_docs_by_id(
+        self, file_paths: dict[int, Path], pages_grouped: dict[str, list[Document]]
+    ) -> dict[int, list[Document]]:
         docs_grouped = {}
         for doc_id, doc_path in file_paths.items():
             file_name = doc_path.name
@@ -115,7 +139,7 @@ class SubquestionAgent(BaseAgent):
             else:
                 raise Exception(f"Pages not found for file {file_name}")
         return docs_grouped
-    
+
     def _get_vector_indexes(
         self, doc_sets: dict[str, list[Document]]
     ) -> dict[str, VectorStoreIndex]:

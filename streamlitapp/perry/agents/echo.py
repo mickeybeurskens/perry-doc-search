@@ -1,6 +1,5 @@
 from perry.agents.base import BaseAgent, BaseAgentConfig
 from sqlalchemy.orm import Session
-from perry.db.models import Agent
 
 
 class EchoAgent(BaseAgent):
@@ -14,6 +13,11 @@ class EchoAgent(BaseAgent):
 
     def _on_save(self):
         pass
+
+    @classmethod
+    @staticmethod
+    def _get_config_instance(config_data: dict) -> BaseAgentConfig:
+        return BaseAgentConfig(**config_data)
 
     @classmethod
     def _on_load(

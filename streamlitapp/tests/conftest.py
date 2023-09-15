@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, Session
 from perry.db.models import Base
 from perry.db.operations.agents import create_agent, update_agent
-from perry.db.operations.conversations import create_conversation, update_conversation
+from perry.db.operations.conversations import create_conversation
 from perry.db.operations.documents import create_document, update_document
 from perry.db.operations.users import create_user
 

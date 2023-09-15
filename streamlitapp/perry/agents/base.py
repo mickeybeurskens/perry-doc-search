@@ -12,8 +12,8 @@ class BaseAgentConfig(BaseModel):
 
 
 class BaseAgent(ABC):
-    def __init__(self, db_session: Session, config: BaseAgentConfig, agent_id: int):
-        self.config = config
+    def __init__(self, db_session: Session, config: dict, agent_id: int):
+        self.config = self._get_config_instance(config)
         self.id = agent_id
         self._db_session = db_session
         self._agent_data = self._load_agent_data(db_session, agent_id)
@@ -27,6 +27,11 @@ class BaseAgent(ABC):
     @abstractmethod
     async def query(self, query: str) -> str:
         """Query the agent and get a response."""
+
+    @classmethod
+    @abstractmethod
+    def _get_config_instance(config_data: dict) -> BaseAgentConfig:
+        """Return the config class used."""
 
     @abstractmethod
     def _on_save(self):
@@ -47,9 +52,8 @@ class BaseAgent(ABC):
     @classmethod
     def load(cls, db_session: Session, agent_id: int) -> BaseAgent:
         """Load the agent state and return an instance of the agent."""
-        config = cls._get_saved_config(db_session, agent_id)
-
-        return cls._on_load(db_session, config, agent_id)
+        config_dict = cls._get_saved_config(db_session, agent_id)
+        return cls._on_load(db_session, config_dict, agent_id)
 
     @classmethod
     def _load_agent_data(cls, db_session: Session, agent_id: int) -> DBAgent:

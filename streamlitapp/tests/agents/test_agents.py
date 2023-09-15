@@ -3,16 +3,17 @@ from perry.agents.echo import EchoAgent
 from perry.agents.base import BaseAgentConfig, BaseAgent
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
 from perry.db.operations.agents import update_agent
+from tests.agents.fixtures_subquestion import *
 
 agents_to_test = [
-    (EchoAgent, BaseAgentConfig(name="EchoAgentTest")),
+    (EchoAgent, BaseAgentConfig(name="EchoAgentTest").dict()),
     (
         SubquestionAgent,
         SubquestionConfig(
             name="SubquestionAgentTest",
             language_model_name="gpt3.5-turbo",
             temperature=0.3,
-        ),
+        ).dict(),
     )
     # Add other agents and their configurations here
 ]
