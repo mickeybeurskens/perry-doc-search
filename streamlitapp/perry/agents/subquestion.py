@@ -77,17 +77,19 @@ class SubquestionAgent(BaseAgent):
         return doc_paths
 
     def _create_engine(self):
-        reader = SimpleDirectoryReader(input_files=self._get_doc_paths())
-        docs = reader.load_data()
-
-        docs_grouped = self._group_docs_by_file_name(docs)
+        docs_grouped = self._load_docs()
         print(docs_grouped)
     #     doc_indexes = self._create_file_indexes(docs_grouped)
     #     return self._create_subquestion_engine(doc_indexes, file_summaries)
 
-    @staticmethod
-    def _group_docs_by_file_name(docs: list[Document]) -> dict[str, list[Document]]:
+    def _load_docs(self) -> dict[str, list[Document]]:
         docs_grouped = {}
+        file_paths = self._get_doc_paths()
+        if len(file_paths) == 0:
+            return docs_grouped
+        
+        reader = SimpleDirectoryReader(input_files=file_paths)
+        docs = reader.load_data()
         for doc in docs:
             if doc.metadata.get("file_name") is None:
                 file_name = "NO_FILE_NAME"
