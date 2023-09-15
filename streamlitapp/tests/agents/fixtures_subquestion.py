@@ -35,7 +35,9 @@ def mock_subquestion_agent_service_context(monkeypatch):
 
 
 def get_subquestion_config():
-    return SubquestionConfig(name="test", language_model_name="test", temperature=0.3).dict()
+    return SubquestionConfig(
+        name="test", language_model_name="test", temperature=0.3
+    ).dict()
 
 
 def create_temp_file(tmp_path: Path, content: str, name: str, suffix: str) -> Path:
