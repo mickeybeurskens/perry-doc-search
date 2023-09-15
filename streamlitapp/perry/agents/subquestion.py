@@ -38,18 +38,6 @@ class SubquestionAgent(BaseAgent):
     _cache_path = Path(".cache")
 
     def _setup(self):
-        # self._cache_path = cache_dir
-        # self._from_cache = from_cache
-
-        # openai.api_key = os.getenv("OPENAI_API_KEY")
-        # llm = OpenAI(temperature=0.3, model="gpt-4")
-
-        # # llama_debug = LlamaDebugHandler(print_trace_on_end=True)
-        # # callback_manager = CallbackManager([llama_debug])
-        # self._service_context = ServiceContext.from_defaults(
-        #     llm=llm,
-        #     # callback_manager=callback_manager,
-        # )
         self._service_context = self._get_new_service_context(
             self._get_new_model(
                 self.config.language_model_name, self.config.temperature
@@ -58,7 +46,7 @@ class SubquestionAgent(BaseAgent):
         self._engine = self._create_engine()
 
     async def query(self, query: str) -> str:
-        return self._engine.aquery(query)
+        return await self._engine.aquery(query)
 
     def _on_save(self):
         pass

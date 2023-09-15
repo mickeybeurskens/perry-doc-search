@@ -22,12 +22,13 @@ agents_to_test = [
 @pytest.mark.asyncio
 @pytest.mark.parametrize("agent_class, config", agents_to_test)
 async def test_agent_query_returns_string(
-    test_db, agent_class, config, add_agent_to_db, add_conversation_to_db
+    test_db, agent_class, config, add_agent_to_db, add_conversation_to_db, monkeypatch
 ):
     agent_id = add_agent_to_db()
     conversation_id = add_conversation_to_db()
     update_agent(test_db, agent_id, conversation_id=conversation_id)
     agent_instance = agent_class(test_db, config, agent_id)
+
     response = await agent_instance.query("test query")
     assert isinstance(response, str)
 

@@ -149,13 +149,12 @@ def test_create_subquestion_engine_should_return_valid_SubQuestionQueryEngine(
         {"content": "test", "name": "duplicate", "suffix": ".pdf"},
         {"content": "test", "name": "duplicate", "suffix": ".pdf"},
     ]
+
     mock_subquestion_query_engine = "MockedSubQuestionQueryEngine"
 
     def mock_from_defaults(query_engine_tools, service_context):
         return mock_subquestion_query_engine
 
-    monkeypatch.setattr(SubQuestionQueryEngine, "from_defaults", mock_from_defaults)
-
     agent, _, _ = create_subquestion_agent_with_documents(file_info)
 
-    assert agent._create_engine() == mock_subquestion_query_engine
+    assert isinstance(agent._create_engine(), MockSubQuestionQueryEngine)

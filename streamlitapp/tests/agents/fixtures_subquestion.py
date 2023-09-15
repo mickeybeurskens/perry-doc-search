@@ -26,11 +26,23 @@ def create_mock_service_context(*args, **kwargs):
     )
 
 
+class MockSubQuestionQueryEngine:
+    @classmethod
+    def from_defaults(cls, query_engine_tools, service_context):
+        return cls()
+
+    async def aquery(self, *args, **kwargs):
+        return "Mocked aquery result"
+
+
 @pytest.fixture(scope="function", autouse=True)
 def mock_subquestion_agent_service_context(monkeypatch):
     monkeypatch.setattr(
         "perry.agents.subquestion.SubquestionAgent._get_new_service_context",
         create_mock_service_context,
+    )
+    monkeypatch.setattr(
+        "perry.agents.subquestion.SubQuestionQueryEngine", MockSubQuestionQueryEngine
     )
 
 
@@ -83,7 +95,7 @@ def create_subquestion_agent_with_documents(
     add_documents_with_file_names,
     add_connected_agent_conversation_to_db,
     tmp_path,
-    monkeypatch
+    monkeypatch,
 ) -> tuple[SubquestionAgent, list[int], list[str]]:
     def _create_subquestion_agent_with_documents(file_info: list[dict[str, str, str]]):
         file_paths = [
