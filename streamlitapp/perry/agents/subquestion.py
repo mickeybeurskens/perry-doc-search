@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from perry.agents.base import BaseAgent, BaseAgentConfig
 from perry.db.models import Document as DBDocument, User as DBUser, Agent as DBAgent
+from perry.db.operations.documents import get_document
 
 
 class SubquestionConfig(BaseAgentConfig):
@@ -33,6 +34,7 @@ class SubquestionConfig(BaseAgentConfig):
 
 class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
+
     _cache_path = Path(".cache")
 
     def _setup(self):
@@ -104,10 +106,9 @@ class SubquestionAgent(BaseAgent):
 
     def _create_engine(self):
         docs_grouped = self._load_docs()
-        # doc_vector_indexes = self._get_vector_indexes(docs_grouped)
-        # print(docs_grouped)
+        doc_vector_indexes = self._get_vector_indexes(docs_grouped)
 
-    #     return self._create_subquestion_engine(doc_indexes, file_summaries)
+        return self._create_subquestion_engine(doc_vector_indexes)
 
     def _load_docs(self) -> dict[int, list[Document]]:
         file_paths = self._get_doc_paths()
@@ -156,17 +157,18 @@ class SubquestionAgent(BaseAgent):
         return indexes_info
 
     @staticmethod
-    def _cache_exists(directory: Path):
+    def _cache_exists(directory: Path) -> bool:
         if not directory.exists():
-            raise FileNotFoundError(f"Directory {directory} not found")
+            return False
         if not Path(directory, "docstore.json").exists():
-            raise FileNotFoundError(f"docstore.json not found in {directory}")
+            return False
         if not Path(directory, "index_store.json").exists():
-            raise FileNotFoundError(f"index_store.json not found in {directory}")
+            return False
         if not Path(directory, "graph_store.json").exists():
-            raise FileNotFoundError(f"graph_store.json not found in {directory}")
+            return False
         if not Path(directory, "vector_store.json").exists():
-            raise FileNotFoundError(f"vector_store.json not found in {directory}")
+            return False
+        return True
 
     def _load_index(self, doc_id: int) -> VectorStoreIndex:
         save_path = Path(self._cache_path, str(doc_id))
@@ -190,26 +192,21 @@ class SubquestionAgent(BaseAgent):
         index.storage_context.persist(persist_dir=Path(self._cache_path, str(doc_id)))
         return index
 
-    # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:
-    #     file_summaries = {}
-    #     for file_path in file_paths:
-    #         meta_file_path = Path(file_path.parent, file_path.stem + ".txt")
-    #         with open(meta_file_path, 'r') as f:
-    #             file_summaries[meta_file_path.stem + ".pdf"] = f.read()
-    #     return file_summaries
-
-    # def _create_subquestion_engine(self, doc_indexes: dict[str, VectorStoreIndex], file_summaries: dict[str, str]):
-    #     tools = []
-    #     for name in doc_indexes.keys():
-    #         if name in file_summaries.keys():
-    #             summary = file_summaries[name]
-    #             tools.append(QueryEngineTool(
-    #                 query_engine=doc_indexes[name].as_query_engine(service_context=self._service_context),
-    #                 metadata=ToolMetadata(name=name, description=summary)
-    #             ))
-    #         else:
-    #             raise Exception(f"Summary not found for file {name}")
-    #     return SubQuestionQueryEngine.from_defaults(
-    #         query_engine_tools=tools,
-    #         service_context=self._service_context,
-    #     )
+    def _create_subquestion_engine(
+        self, doc_indexes: dict[int, VectorStoreIndex]
+    ) -> SubQuestionQueryEngine:
+        tools = []
+        for doc_id in doc_indexes.keys():
+            summary = get_document(self._db_session, doc_id).description
+            tools.append(
+                QueryEngineTool(
+                    query_engine=doc_indexes[doc_id].as_query_engine(
+                        service_context=self._service_context
+                    ),
+                    metadata=ToolMetadata(name=doc_id, description=summary),
+                )
+            )
+        return SubQuestionQueryEngine.from_defaults(
+            query_engine_tools=tools,
+            service_context=self._service_context,
+        )

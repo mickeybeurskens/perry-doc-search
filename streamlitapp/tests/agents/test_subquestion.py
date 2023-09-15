@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from tests.agents.fixtures_subquestion import *
+from llama_index.query_engine import SubQuestionQueryEngine
 
 
 def test_doc_paths_from_connected_docs_should_be_returned(
@@ -70,23 +71,7 @@ def test_should_raise_exception_for_non_pdf_file(
 def test_cache_exists_raises_error_if_directory_not_found(monkeypatch):
     monkeypatch.setattr(Path, "exists", lambda x: False)
     directory = Path("/some/random/directory")
-    with pytest.raises(FileNotFoundError, match=r"Directory .* not found"):
-        SubquestionAgent._cache_exists(directory)
-
-
-@pytest.mark.parametrize(
-    "missing_file",
-    ["docstore.json", "index_store.json", "graph_store.json", "vector_store.json"],
-)
-def test_cache_exists_raises_error_if_file_not_found(monkeypatch, missing_file):
-    def mock_exists(path):
-        return not path.name == missing_file
-
-    monkeypatch.setattr(Path, "exists", mock_exists)
-    directory = Path("/some/random/directory")
-
-    with pytest.raises(FileNotFoundError, match=rf"{missing_file} not found in .*"):
-        SubquestionAgent._cache_exists(directory)
+    assert not SubquestionAgent._cache_exists(directory)
 
 
 def test_cache_exists_passes_when_all_files_and_directory_exist(monkeypatch):
@@ -132,7 +117,7 @@ def test_get_vector_indexes_should_call_appropriate_methods_based_on_cache_exist
     "missing_file",
     ["docstore.json", "index_store.json", "graph_store.json", "vector_store.json"],
 )
-def test_cache_exists_should_raise_error_when_required_file_is_missing(
+def test_cache_exists_should_return_false_when_required_file_is_missing(
     monkeypatch, missing_file
 ):
     def mock_exists(path):
@@ -141,8 +126,7 @@ def test_cache_exists_should_raise_error_when_required_file_is_missing(
     monkeypatch.setattr(Path, "exists", mock_exists)
     directory = Path("/some/random/directory")
 
-    with pytest.raises(FileNotFoundError, match=rf"{missing_file} not found in .*"):
-        SubquestionAgent._cache_exists(directory)
+    assert not SubquestionAgent._cache_exists(directory)
 
 
 def test_load_index_should_raise_error_if_cache_does_not_exist(
@@ -156,3 +140,22 @@ def test_load_index_should_raise_error_if_cache_does_not_exist(
     ):
         agent = create_subquestion_agent()
         agent._load_index(1)
+
+
+def test_create_subquestion_engine_should_return_valid_SubQuestionQueryEngine(
+    monkeypatch, create_subquestion_agent_with_documents
+):
+    file_info = [
+        {"content": "test", "name": "duplicate", "suffix": ".pdf"},
+        {"content": "test", "name": "duplicate", "suffix": ".pdf"},
+    ]
+    mock_subquestion_query_engine = "MockedSubQuestionQueryEngine"
+
+    def mock_from_defaults(query_engine_tools, service_context):
+        return mock_subquestion_query_engine
+
+    monkeypatch.setattr(SubQuestionQueryEngine, "from_defaults", mock_from_defaults)
+
+    agent, _, _ = create_subquestion_agent_with_documents(file_info)
+
+    assert agent._create_engine() == mock_subquestion_query_engine
