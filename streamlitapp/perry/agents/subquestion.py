@@ -146,29 +146,47 @@ class SubquestionAgent(BaseAgent):
         indexes_info = {}
 
         for name in doc_sets.keys():
-            if self._from_cache:
-                pass
+            save_path = Path(self._cache_path, doc_id)
+
+            if self._cache_exists(save_path):
+                indexes_info[doc_id] = self._load_index(doc_id)
             else:
-                pass
+                indexes_info[doc_id] = self._create_index(doc_id, doc_sets[name])
 
-    # def _load_indexes(self, doc_id: int) -> VectorStoreIndex:
-    #     try:
-    #         print(f"Loading index for {doc_path} from cache for {self.__class__.__name__}")
-    #         storage_context = StorageContext.from_defaults(
-    #             persist_dir=Path(doc_path),
-    #         )
-    #         return load_index_from_storage(storage_context)
-    #     except FileNotFoundError:
-    #         raise FileNotFoundError(f"Index for {doc_path} not found in cache at location")
+    @staticmethod
+    def _cache_exists(directory: Path):
+        if not directory.exists():
+            raise FileNotFoundError(f"Directory {directory} not found")
+        if not Path(directory, "docstore.json").exists():
+            raise FileNotFoundError(f"docstore.json not found in {directory}")
+        if not Path(directory, "index_store.json").exists():
+            raise FileNotFoundError(f"index_store.json not found in {directory}")
+        if not Path(directory, "graph_store.json").exists():
+            raise FileNotFoundError(f"graph_store.json not found in {directory}")
+        if not Path(directory, "vector_store.json").exists():
+            raise FileNotFoundError(f"vector_store.json not found in {directory}")
 
-    # def _create_indexes(self, doc_id: int, doc_set: list[Document]) -> VectorStoreIndex:
+    def _load_index(self, doc_id: int) -> VectorStoreIndex:
+        save_path = Path(self._cache_path, str(doc_id))
+        try:
+            print(
+                f"Loading vector index for document_id: {doc_id} from cache for {self.__class__.__name__}"
+            )
+            storage_context = StorageContext.from_defaults(
+                persist_dir=save_path,
+            )
+            return load_index_from_storage(storage_context)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Vector index for document_id: {doc_id} not found in cache {save_path}"
+            )
 
-    #     index = VectorStoreIndex.from_documents(
-    #         doc_set,
-    #         service_context=self._service_context
-    #     )
-    #     index.storage_context.persist(persist_dir=Path(self._cache_path, doc_path))
-    #     return str(doc_path), index
+    def _create_index(self, doc_id: int, doc_set: list[Document]) -> VectorStoreIndex:
+        index = VectorStoreIndex.from_documents(
+            doc_set, service_context=self._service_context
+        )
+        index.storage_context.persist(persist_dir=Path(self._cache_path, doc_id))
+        return index
 
     # def _get_file_summaries(self, file_paths: list[Path]) -> dict[str, str]:
     #     file_summaries = {}

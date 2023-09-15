@@ -65,3 +65,35 @@ def test_should_raise_exception_for_non_pdf_file(
     with pytest.raises(Exception, match=r".*is not a PDF"):
         agent, _, _ = create_subquestion_agent_with_documents(file_info=file_info)
         agent._load_docs()
+
+
+def test_cache_exists_raises_error_if_directory_not_found(monkeypatch):
+    monkeypatch.setattr(Path, "exists", lambda x: False)
+    directory = Path("/some/random/directory")
+    with pytest.raises(FileNotFoundError, match=r"Directory .* not found"):
+        SubquestionAgent._cache_exists(directory)
+
+
+@pytest.mark.parametrize(
+    "missing_file",
+    ["docstore.json", "index_store.json", "graph_store.json", "vector_store.json"],
+)
+def test_cache_exists_raises_error_if_file_not_found(monkeypatch, missing_file):
+    def mock_exists(path):
+        return not path.name == missing_file
+
+    monkeypatch.setattr(Path, "exists", mock_exists)
+    directory = Path("/some/random/directory")
+
+    with pytest.raises(FileNotFoundError, match=rf"{missing_file} not found in .*"):
+        SubquestionAgent._cache_exists(directory)
+
+
+def test_cache_exists_passes_when_all_files_and_directory_exist(monkeypatch):
+    monkeypatch.setattr(Path, "exists", lambda x: True)
+    directory = Path("/some/random/directory")
+
+    try:
+        SubquestionAgent._cache_exists(directory)
+    except FileNotFoundError:
+        pytest.fail("FileNotFoundError raised when it shouldn't be.")
