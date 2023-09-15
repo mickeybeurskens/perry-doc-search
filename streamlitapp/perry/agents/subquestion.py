@@ -69,13 +69,16 @@ class SubquestionAgent(BaseAgent):
         doc_paths = {}
         for document in documents:
             doc_path = Path(document.file_path)
-
-            if not doc_path.is_file():
-                raise Exception(f"Source data '{doc_path}' is not a file")
-            if not doc_path.suffix.lower() == ".pdf":
-                raise Exception(f"Source data '{doc_path}' should be a PDF file")
+            self._validate_pdf_path(doc_path)
             doc_paths[document.id] = doc_path
         return doc_paths
+
+    def _validate_pdf_path(self, doc_path: Path):
+        if not doc_path.is_file():
+            raise Exception(f"The specified path '{doc_path}' does not point to a file.")
+        if doc_path.suffix.lower() != ".pdf":
+            raise Exception(f"The file at '{doc_path}' is not a PDF.")
+
 
     def _create_engine(self):
         pass
@@ -85,24 +88,34 @@ class SubquestionAgent(BaseAgent):
 
     #     return self._create_subquestion_engine(doc_indexes, file_summaries)
 
-    def _load_docs(self) -> dict[str, list[Document]]:
-        docs_grouped = {}
+    def _load_docs(self) -> dict[int, list[Document]]:
         file_paths = self._get_doc_paths()
-        if len(file_paths) == 0:
-            return docs_grouped
+        if not file_paths:
+            return {}
 
-        reader = SimpleDirectoryReader(input_files=file_paths)
-        docs = reader.load_data()
-        for doc in docs:
-            if doc.metadata.get("file_name") is None:
-                file_name = "NO_FILE_NAME"
+        reader = SimpleDirectoryReader(input_files=file_paths.values())
+        pages = reader.load_data()
+        pages_grouped = self._group_pages_by_filename(pages)
+
+        return self._group_docs_by_id(file_paths, pages_grouped)
+
+    def _group_pages_by_filename(self, pages: list[Document]) -> dict[str, list[Document]]:
+        pages_grouped = {}
+        for page in pages:
+            file_name = page.metadata.get("file_name", "NO_FILE_NAME")
+            pages_grouped.setdefault(file_name, []).append(page)
+        return pages_grouped
+
+    def _group_docs_by_id(self, file_paths: dict[int, Path], pages_grouped: dict[str, list[Document]]) -> dict[int, list[Document]]:
+        docs_grouped = {}
+        for doc_id, doc_path in file_paths.items():
+            file_name = doc_path.name
+            if file_name in pages_grouped:
+                docs_grouped[doc_id] = pages_grouped[file_name]
             else:
-                file_name = doc.metadata["file_name"]
-            if file_name not in docs_grouped.keys():
-                docs_grouped[file_name] = []
-            docs_grouped[file_name].append(doc)
+                raise Exception(f"Pages not found for file {file_name}")
         return docs_grouped
-
+    
     def _get_vector_indexes(
         self, doc_sets: dict[str, list[Document]]
     ) -> dict[str, VectorStoreIndex]:
