@@ -18,6 +18,8 @@ nltk = "^3.8.1"
 python-dotenv = "^1.0.0"
 sqlalchemy = "^2.0.20"
 passlib = "^1.7.4"
+fastapi = "^0.103.1"
+uvicorn = "^0.23.2"
 
 
 [tool.poetry.group.dev.dependencies]

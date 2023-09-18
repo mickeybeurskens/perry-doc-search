@@ -29,6 +29,12 @@ def test_db(create_test_db) -> Session:
     return create_test_db
 
 
+@pytest.fixture(scope="function", autouse=True)
+def mock_get_db_session(monkeypatch, test_db):
+    """Mock get_db_session to return test_db."""
+    monkeypatch.setattr("perry.db.session.get_db_session", test_db)
+
+
 @pytest.fixture(scope="function")
 def add_agent_to_db(test_db) -> int:
     """Add an agent to the database and return its ID."""
