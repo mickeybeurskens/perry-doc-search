@@ -1,4 +1,5 @@
-import datetime
+from datetime import datetime
+import re
 from enum import Enum
 from sqlalchemy import (
     Table,
@@ -47,7 +48,10 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    _email = Column(String, unique=True, index=True)
     _password = Column("password", String)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     documents = relationship(
         "Document", secondary=user_document_relation, back_populates="users"
@@ -60,6 +64,16 @@ class User(Base):
     def verify_password(self, password: str):
         return pwd_context.verify(password, self._password)
 
+    def set_email(self, email: str):
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if re.match(pattern, email):
+            self._email = email
+        else:
+            raise ValueError("Invalid email format")
+
+    def to_jwt_payload(self):
+        return {"sub": self.id, "username": self.username}
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -68,7 +82,7 @@ class Message(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     role = Column(to_db_enum(MessageRoleEnum))
     message = Column(String)
-    timestamp = Column(DateTime, default=datetime.datetime.now)
+    timestamp = Column(DateTime, default=datetime.now)
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
     conversation = relationship("Conversation", back_populates="messages")
 
@@ -94,7 +108,7 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(Integer, primary_key=True, index=True)
-    start_time = Column(DateTime, default=datetime.datetime.now)
+    start_time = Column(DateTime, default=datetime.now)
 
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="conversations")

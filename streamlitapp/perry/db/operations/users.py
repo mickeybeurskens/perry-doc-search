@@ -20,7 +20,11 @@ def get_user_by_username(db: Session, username: str) -> User:
 
 
 def update_user(
-    db: Session, user_id: int, username: str = None, password: str = None
+    db: Session,
+    user_id: int,
+    username: str = None,
+    password: str = None,
+    email: str = None,
 ) -> int:
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -29,6 +33,8 @@ def update_user(
         user.username = username
     if password:
         user.set_password(password)
+    if email:
+        user.set_email(email)
     db.commit()
     db.refresh(user)
-    return user
+    return user.id
