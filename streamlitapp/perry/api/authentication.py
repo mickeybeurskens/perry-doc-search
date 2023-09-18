@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from perry.db.operations.users import get_user
+from perry.db.operations.users import get_user_by_username
 
 
 class Token(BaseModel):
@@ -14,7 +14,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_id: int | None = None
+    username: str | None = None
 
 
 def get_secret_key():
@@ -53,13 +53,13 @@ async def get_user_from_token(
         payload = jwt.decode(
             token, get_secret_key(), algorithms=[get_token_algorithm()]
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        username: str = payload.get("sub")
+        if username is None:
             raise credentials_exception
-        token_data = TokenData(user_id=user_id)
+        token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(db, token_data.user_id)
+    user = get_user_by_username(db, token_data.username)
     if user is None:
         raise credentials_exception
     return user

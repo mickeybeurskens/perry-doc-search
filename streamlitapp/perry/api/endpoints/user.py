@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import timedelta
 from fastapi import HTTPException, APIRouter, Depends, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from perry.db.models import User
 from perry.db.operations.users import (
@@ -13,7 +13,6 @@ from perry.db.operations.users import (
 from perry.db.session import get_db_session
 from perry.api.authentication import Token, create_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 user_router = APIRouter()
 
