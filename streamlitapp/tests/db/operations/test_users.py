@@ -27,6 +27,20 @@ def test_create_user(test_db):
     assert pwd_context.verify(password, created_user._password)
 
 
+def test_delete_user_with_correct_id(test_db, create_user_in_db):
+    user_id = create_user_in_db("test", "test")
+
+    deleted_user_id = delete_user(test_db, user_id)
+    deleted_user = test_db.query(User).filter_by(id=deleted_user_id).first()
+
+    assert deleted_user is None
+
+
+def test_delete_user_with_incorrect_id(test_db):
+    deleted_user_id = delete_user(test_db, 1000)
+    assert deleted_user_id is None
+
+
 def test_get_user(test_db, create_user_in_db):
     username = "arthur"
     password = "dent"
@@ -133,7 +147,7 @@ def test_should_not_update_if_no_new_data(test_db, test_user):
 
 def test_jwt_payload_correctly_returned(test_user):
     payload = test_user.to_jwt_payload()
-    assert payload["sub"] == test_user.id
+    assert payload["sub"] == str(test_user.id)
     assert payload["username"] == test_user.username
 
 

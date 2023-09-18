@@ -11,6 +11,15 @@ def create_user(db: Session, username: str, password: str) -> int:
     return user.id
 
 
+def delete_user(db: Session, user_id: int) -> int:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return None
+    db.delete(user)
+    db.commit()
+    return user.id
+
+
 def get_user(db: Session, user_id: int) -> User:
     return db.query(User).filter(User.id == user_id).first()
 
