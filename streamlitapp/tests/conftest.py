@@ -22,6 +22,11 @@ def create_test_db() -> Session:
 
 
 @pytest.fixture(scope="function", autouse=True)
+def mock_get_secret_key(monkeypatch):
+    monkeypatch.setattr("perry.api.authentication.get_secret_key", get_mock_secret_key)
+
+
+@pytest.fixture(scope="function", autouse=True)
 def test_db(create_test_db) -> Session:
     """Empty database before each test and return."""
     clear_db(create_test_db)
@@ -144,3 +149,7 @@ def clear_db(db_session: Session):
     for table in reversed(metadata.sorted_tables):
         db_session.execute(table.delete())
     db_session.commit()
+
+
+def get_mock_secret_key():
+    return "supersecrettestkey"
