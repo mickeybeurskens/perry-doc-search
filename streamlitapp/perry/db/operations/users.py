@@ -38,3 +38,12 @@ def update_user(
     db.commit()
     db.refresh(user)
     return user.id
+
+
+def authenticate_user(db: Session, username: str, password: str) -> int:
+    user = get_user_by_username(db, username)
+    if not user:
+        return None
+    if not user.verify_password(password):
+        return None
+    return user.id

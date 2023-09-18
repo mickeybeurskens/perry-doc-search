@@ -135,3 +135,22 @@ def test_jwt_payload_correctly_returned(test_user):
     payload = test_user.to_jwt_payload()
     assert payload["sub"] == test_user.id
     assert payload["username"] == test_user.username
+
+
+def test_authenticate_should_return_user_if_authenticated(test_db, create_user_in_db):
+    username = "trantor"
+    password = "foundation"
+    user_id = create_user_in_db(username, password)
+    test_user = get_user(test_db, user_id)
+    assert user_id == test_user.id
+
+
+def test_authenticate_should_return_none_if_user_does_not_exist(test_db):
+    assert authenticate_user(test_db, "non_existing_user", "password") is None
+
+
+def test_authenticate_should_return_none_if_password_wrong(test_db, create_user_in_db):
+    username = "terminus"
+    password = "foundation"
+    create_user_in_db(username, password)
+    assert authenticate_user(test_db, username, "wrong_password") is None

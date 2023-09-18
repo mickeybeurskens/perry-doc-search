@@ -20,6 +20,7 @@ sqlalchemy = "^2.0.20"
 passlib = "^1.7.4"
 fastapi = "^0.103.1"
 uvicorn = "^0.23.2"
+python-jose = "^3.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
