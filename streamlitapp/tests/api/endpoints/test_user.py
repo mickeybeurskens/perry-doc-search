@@ -3,6 +3,14 @@ import pytest
 from perry.db.models import User
 
 
+class FakeUser:
+    def __init__(self, user_id):
+        self.id = user_id
+
+    def to_jwt_payload(self):
+        return {"sub": str(self.id), "username": "test_user"}
+
+
 @pytest.fixture
 def test_client():
     from perry.api.app import app
@@ -40,3 +48,27 @@ def test_should_not_register_duplicate_username(test_client, create_user_in_db):
     )
     assert response.status_code == 400
     assert response.json() == {"detail": "Username already registered"}
+
+
+def test_login_for_access_token_valid_user(test_client, create_user_in_db):
+    username = "valid_user"
+    password = "valid_pass"
+    create_user_in_db(username, password)
+    response = test_client.post(
+        "/token", data={"username": "valid_user", "password": "valid_pass"}
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert response.json()["token_type"] == "bearer"
+
+
+def test_login_for_access_token_invalid_user_should_error(test_client):
+    response = test_client.post(
+        "/token", data={"username": "invalid_user", "password": "invalid_pass"}
+    )
+    assert response.status_code == 401
+
+
+def test_login_for_access_token_empty_values_should_error(test_client):
+    response = test_client.post("/token", data={"username": "", "password": ""})
+    assert response.status_code == 422
