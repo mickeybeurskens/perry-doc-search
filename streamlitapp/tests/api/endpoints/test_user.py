@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import jwt
 import pytest
+import freezegun
 from fastapi.testclient import TestClient
 from fastapi import HTTPException
 from perry.db.models import User
@@ -22,6 +23,10 @@ def users_url():
     return "/users"
 
 
+def get_mocked_date():
+    return datetime(2021, 1, 1)
+
+
 @pytest.fixture(scope="function")
 def test_client():
     from perry.api.app import app
@@ -32,14 +37,15 @@ def test_client():
 
 @pytest.fixture(scope="function")
 def mocked_valid_token(test_db, create_user_in_db):
-    user_id = create_user_in_db("test_user", "test_password")
-    user = get_user(test_db, user_id)
-    data = user.to_jwt_payload()
-    expiration = datetime.utcnow() + timedelta(hours=1)
-    token = jwt.encode(
-        {"exp": expiration, **data}, get_mock_secret_key(), algorithm="HS256"
-    )
-    return token, user_id
+    with freezegun.freeze_time(get_mocked_date()):
+        user_id = create_user_in_db("test_user", "test_password")
+        user = get_user(test_db, user_id)
+        data = user.to_jwt_payload()
+        expiration = datetime.utcnow() + timedelta(hours=1)
+        token = jwt.encode(
+            {"exp": expiration, **data}, get_mock_secret_key(), algorithm="HS256"
+        )
+        return token, user_id
 
 
 @pytest.fixture(scope="function")
@@ -50,14 +56,15 @@ def mocked_invalid_token():
 
 @pytest.fixture(scope="function")
 def mocked_expired_token(test_db, create_user_in_db):
-    user_id = create_user_in_db("test_user", "test_password")
-    user = get_user(test_db, user_id)
-    data = user.to_jwt_payload()
-    expiration = datetime.utcnow() - timedelta(hours=2)
-    token = jwt.encode(
-        {"exp": expiration, **data}, get_mock_secret_key(), algorithm="HS256"
-    )
-    return token, user_id
+    with freezegun.freeze_time(get_mocked_date()):
+        user_id = create_user_in_db("test_user", "test_password")
+        user = get_user(test_db, user_id)
+        data = user.to_jwt_payload()
+        expiration = datetime.utcnow() - timedelta(hours=2)
+        token = jwt.encode(
+            {"exp": expiration, **data}, get_mock_secret_key(), algorithm="HS256"
+        )
+        return token, user_id
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -119,6 +126,7 @@ def test_login_for_access_token_invalid_user_should_error(test_client):
         data={"username": "invalid_user", "password": "invalid_pass"},
     )
     assert response.status_code == 401
+    assert response.json() == {"detail": "Incorrect username or password"}
 
 
 def test_login_for_access_token_empty_values_should_error(test_client):
@@ -131,8 +139,9 @@ def test_login_for_access_token_empty_values_should_error(test_client):
 @pytest.mark.asyncio
 async def test_should_return_user_when_token_is_valid(test_db, mocked_valid_token):
     token, user_id = mocked_valid_token
-    result = await get_current_user(token)
-    assert result.username == get_user(test_db, user_id).username
+    with freezegun.freeze_time(get_mocked_date()):
+        result = await get_current_user(token)
+        assert result.username == get_user(test_db, user_id).username
 
 
 @pytest.mark.asyncio
@@ -177,8 +186,35 @@ def test_read_user_info_should_error_if_user_gone(
 def test_read_user_info_should_return_user(test_db, test_client, mocked_valid_token):
     token, user_id = mocked_valid_token
     username = get_user(test_db, user_id).username
-    response = test_client.get(
-        users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
-    )
+    with freezegun.freeze_time(get_mocked_date()):
+        response = test_client.get(
+            users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
+        )
     assert response.status_code == 200
     assert response.json() == {"username": username, "email": None}
+
+
+def test_generated_token_should_allow_get_user_info(
+    test_db, test_client, mocked_valid_token
+):
+    token, user_id = mocked_valid_token
+    username = get_user(test_db, user_id).username
+    with freezegun.freeze_time(get_mocked_date()):
+        response = test_client.get(
+            users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert response.status_code == 200
+    assert response.json()["username"] == username
+    assert response.json()["email"] is None
+
+
+def test_generated_but_outdated_token_should_refuse_get_user_info(
+    test_db, test_client, mocked_valid_token
+):
+    token, _ = mocked_valid_token
+    with freezegun.freeze_time(get_mocked_date() + timedelta(days=8)):
+        response = test_client.get(
+            users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Could not validate credentials"}
