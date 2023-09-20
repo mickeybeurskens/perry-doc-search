@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import HTTPException
 from perry.db.models import User
-from perry.api.endpoints.user import get_username_from_token
+from perry.api.endpoints.user import get_current_user
 from perry.db.operations.users import get_user, delete_user
 from perry.db.operations.users import get_user
 from tests.conftest import get_mock_secret_key
@@ -22,7 +22,7 @@ def users_url():
     return "/users"
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def test_client():
     from perry.api.app import app
 
@@ -131,25 +131,21 @@ def test_login_for_access_token_empty_values_should_error(test_client):
 @pytest.mark.asyncio
 async def test_should_return_user_when_token_is_valid(test_db, mocked_valid_token):
     token, user_id = mocked_valid_token
-    result = await get_username_from_token(test_db, token)
-    assert result == get_user(test_db, user_id).username
+    result = await get_current_user(token)
+    assert result.username == get_user(test_db, user_id).username
 
 
 @pytest.mark.asyncio
-async def test_should_raise_http_exception_when_token_is_invalid(
-    test_db, mocked_invalid_token
-):
+async def test_should_raise_http_exception_when_token_is_invalid(mocked_invalid_token):
     with pytest.raises(HTTPException):
-        await get_username_from_token(test_db, mocked_invalid_token)
+        await get_current_user(mocked_invalid_token)
 
 
 @pytest.mark.asyncio
-async def test_should_raise_http_exception_when_token_is_expired(
-    test_db, mocked_expired_token
-):
+async def test_should_raise_http_exception_when_token_is_expired(mocked_expired_token):
     token, _ = mocked_expired_token
     with pytest.raises(HTTPException):
-        await get_username_from_token(test_db, token)
+        await get_current_user(token)
 
 
 @pytest.mark.asyncio
@@ -159,4 +155,30 @@ async def test_should_raise_http_exception_when_user_not_found(
     token, user_id = mocked_valid_token
     delete_user(test_db, user_id)
     with pytest.raises(HTTPException):
-        await get_username_from_token(test_db, token)
+        await get_current_user(token)
+
+
+def test_read_user_info_should_error_on_invalid_token(test_client):
+    response = test_client.get(users_url() + "/info")
+    assert response.status_code == 401
+
+
+def test_read_user_info_should_error_if_user_gone(
+    test_db, test_client, mocked_valid_token
+):
+    token, user_id = mocked_valid_token
+    delete_user(test_db, user_id)
+    response = test_client.get(
+        users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 401
+
+
+def test_read_user_info_should_return_user(test_db, test_client, mocked_valid_token):
+    token, user_id = mocked_valid_token
+    username = get_user(test_db, user_id).username
+    response = test_client.get(
+        users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {"username": username, "email": None}

@@ -11,25 +11,34 @@ from perry.db.operations.users import (
     authenticate_user,
 )
 from perry.db.session import DatabaseSessionManager
-from perry.api.authentication import Token, create_access_token, decode_access_token
+from perry.api.authentication import (
+    Token,
+    create_access_token,
+    decode_access_token,
+    oauth2_scheme,
+)
 
 
 user_router = APIRouter()
 
 
-class APIUser(BaseModel):
+class UserRegister(BaseModel):
     username: str
     password: str
 
 
-async def get_username_from_token(
-    db: Session, token: Annotated[str, Depends(decode_access_token)]
-):
+class APIUser(BaseModel):
+    username: str
+    email: str | None = None
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> APIUser:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    db: Session = DatabaseSessionManager.get_db_session
     payload = decode_access_token(token)
     username: str = payload.get("username")
     if username is None:
@@ -37,11 +46,11 @@ async def get_username_from_token(
     db_user = get_user_by_username(db, username)
     if db_user is None:
         raise credentials_exception
-    return username
+    return APIUser(username=db_user.username)
 
 
 @user_router.post("/register")
-async def register(user: APIUser):
+async def register(user: UserRegister):
     db = DatabaseSessionManager.get_db_session
     db_user = get_user_by_username(db, user.username)
     if db_user:
@@ -70,11 +79,6 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# @user_router.get("/info", response_model=APIUser)
-# async def read_user_info(
-#     current_user: Annotated[User, Depends(get_user_from_token)]
-# ):
-#     return APIUser(
-#         username=current_user.username,
-#         password=current_user._password,
-#     )
+@user_router.get("/info", response_model=APIUser)
+async def read_user_info(api_user: Annotated[str, Depends(get_current_user)]):
+    return api_user
