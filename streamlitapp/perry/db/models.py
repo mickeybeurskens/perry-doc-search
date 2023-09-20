@@ -72,7 +72,7 @@ class User(Base):
             raise ValueError("Invalid email format")
 
     def to_jwt_payload(self):
-        return {"sub": str(self.username), "username": self.username}
+        return {"username": self.username}
 
 
 class Message(Base):

@@ -147,7 +147,6 @@ def test_should_not_update_if_no_new_data(test_db, test_user):
 
 def test_jwt_payload_correctly_returned(test_user):
     payload = test_user.to_jwt_payload()
-    assert payload["sub"] == str(test_user.username)
     assert payload["username"] == test_user.username
 
 
