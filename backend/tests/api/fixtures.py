@@ -5,12 +5,11 @@ from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
 from perry.db.operations.users import get_user
 from tests.conftest import get_mock_secret_key
+from perry.api.app import app
 
 
 @pytest.fixture(scope="function")
 def test_client():
-    from perry.api.app import app
-
     with TestClient(app) as client:
         yield client
 

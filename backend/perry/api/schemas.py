@@ -18,4 +18,4 @@ class APIUser(BaseModel):
 
 class APIDocument(BaseModel):
     title: str
-    content: str
+    id: int

@@ -4,6 +4,7 @@ from perry.db.models import User
 from perry.db.operations.users import get_user, delete_user
 from perry.db.operations.users import get_user
 from tests.api.fixtures import *
+from fastapi import status
 
 
 class FakeUser:
@@ -22,7 +23,7 @@ def test_should_check_endpoint_availability(test_client):
     response = test_client.post(
         users_url() + "/register", json={"username": "test", "password": "test"}
     )
-    assert response.status_code != 404
+    assert response.status_code != status.HTTP_404_NOT_FOUND
 
 
 def test_should_register_new_user(test_client, test_db):
@@ -30,7 +31,7 @@ def test_should_register_new_user(test_client, test_db):
         users_url() + "/register",
         json={"username": "new_user", "password": "new_password"},
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"username": "new_user"}
 
     db_user = test_db.query(User).filter(User.username == "new_user").first()
@@ -46,7 +47,7 @@ def test_should_not_register_duplicate_username(test_client, create_user_in_db):
     response = test_client.post(
         users_url() + "/register", json={"username": username, "password": password}
     )
-    assert response.status_code == 400
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json() == {"detail": "Username already registered"}
 
 
@@ -58,7 +59,7 @@ def test_login_for_access_token_valid_user(test_client, create_user_in_db):
         users_url() + "/token",
         data={"username": "valid_user", "password": "valid_pass"},
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert "access_token" in response.json()
     assert response.json()["token_type"] == "bearer"
 
@@ -68,7 +69,7 @@ def test_login_for_access_token_invalid_user_should_error(test_client):
         users_url() + "/token",
         data={"username": "invalid_user", "password": "invalid_pass"},
     )
-    assert response.status_code == 401
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"detail": "Incorrect username or password"}
 
 
@@ -76,12 +77,12 @@ def test_login_for_access_token_empty_values_should_error(test_client):
     response = test_client.post(
         users_url() + "/token", data={"username": "", "password": ""}
     )
-    assert response.status_code == 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_read_user_info_should_error_on_invalid_token(test_client):
     response = test_client.get(users_url() + "/info")
-    assert response.status_code == 401
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_read_user_info_should_error_if_user_gone(
@@ -92,7 +93,7 @@ def test_read_user_info_should_error_if_user_gone(
     response = test_client.get(
         users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
     )
-    assert response.status_code == 401
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_read_user_info_should_return_user(test_db, test_client, mocked_valid_token):
@@ -128,5 +129,5 @@ def test_generated_but_outdated_token_should_refuse_get_user_info(
         response = test_client.get(
             users_url() + "/info", headers={"Authorization": f"Bearer {token}"}
         )
-        assert response.status_code == 401
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.json() == {"detail": "Could not validate credentials"}

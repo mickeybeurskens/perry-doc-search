@@ -8,6 +8,7 @@ from perry.api.schemas import APIUser
 from perry.db.session import DatabaseSessionManager
 from perry.db.operations.users import (
     get_user_by_username,
+    User as DBUser,
 )
 
 
@@ -49,7 +50,9 @@ def decode_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
         )
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> APIUser:
+async def get_db_user_from_token(
+    token: Annotated[str, Depends(oauth2_scheme)]
+) -> DBUser:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -63,4 +66,16 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> API
     db_user = get_user_by_username(db, username)
     if db_user is None:
         raise credentials_exception
+    return db_user
+
+
+async def get_current_user(
+    db_user: Annotated[DBUser, Depends(get_db_user_from_token)]
+) -> APIUser:
     return APIUser(username=db_user.username)
+
+
+async def get_current_user_id(
+    db_user: Annotated[DBUser, Depends(get_db_user_from_token)]
+) -> int:
+    return db_user.id
