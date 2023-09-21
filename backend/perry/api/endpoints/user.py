@@ -2,8 +2,6 @@ from typing import Annotated
 from datetime import timedelta
 from fastapi import HTTPException, APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from perry.db.operations.users import (
     get_user,
     create_user,
@@ -11,42 +9,11 @@ from perry.db.operations.users import (
     authenticate_user,
 )
 from perry.db.session import DatabaseSessionManager
-from perry.api.authentication import (
-    Token,
-    create_access_token,
-    decode_access_token,
-    oauth2_scheme,
-)
+from perry.api.schemas import APIUser, UserRegister, Token
+from perry.api.authentication import create_access_token, get_current_user
 
 
 user_router = APIRouter()
-
-
-class UserRegister(BaseModel):
-    username: str
-    password: str
-
-
-class APIUser(BaseModel):
-    username: str
-    email: str | None = None
-
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> APIUser:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    db: Session = DatabaseSessionManager.get_db_session
-    payload = decode_access_token(token)
-    username: str = payload.get("username")
-    if username is None:
-        raise credentials_exception
-    db_user = get_user_by_username(db, username)
-    if db_user is None:
-        raise credentials_exception
-    return APIUser(username=db_user.username)
 
 
 @user_router.post("/register")

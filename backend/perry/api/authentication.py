@@ -1,18 +1,14 @@
 from datetime import datetime, timedelta
-from pydantic import BaseModel
 from jose import JWTError, jwt
 from typing import Annotated
+from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
+from perry.api.schemas import APIUser
+from perry.db.session import DatabaseSessionManager
+from perry.db.operations.users import (
+    get_user_by_username,
+)
 
 
 def get_secret_key():
@@ -51,3 +47,20 @@ def decode_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> APIUser:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    db: Session = DatabaseSessionManager.get_db_session
+    payload = decode_access_token(token)
+    username: str = payload.get("username")
+    if username is None:
+        raise credentials_exception
+    db_user = get_user_by_username(db, username)
+    if db_user is None:
+        raise credentials_exception
+    return APIUser(username=db_user.username)
