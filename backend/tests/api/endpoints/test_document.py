@@ -64,7 +64,7 @@ def test_should_raise_403_when_unauthorized(
         "perry.api.endpoints.document.document_owned_by_user",
         lambda *args, **kwargs: False,
     )
-    response = test_client.get("/documents/1")
+    response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -76,5 +76,5 @@ def test_get_doc_raises_404_when_doc_not_found(
         "perry.api.endpoints.document.get_document",
         lambda *args, **kwargs: None,
     )
-    response = test_client.get("/documents/1")
+    response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_404_NOT_FOUND
