@@ -14,3 +14,8 @@ class UserRegister(BaseModel):
 class APIUser(BaseModel):
     username: str
     email: str | None = None
+
+
+class APIDocument(BaseModel):
+    title: str
+    content: str
