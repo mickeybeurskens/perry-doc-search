@@ -6,7 +6,11 @@ from unittest.mock import patch
 
 
 def get_document_url():
-    return "/documents"
+    return "/documents/info"
+
+
+def get_file_url():
+    return "/documents/file"
 
 
 def mock_get_user_id(test_client, user_id):
@@ -41,11 +45,12 @@ def mock_get_user_documents(monkeypatch):
 @pytest.mark.parametrize(
     "endpoint, method, status_code",
     [
-        (get_document_url() + "/info/", "GET", status.HTTP_401_UNAUTHORIZED),
-        (get_document_url(), "POST", status.HTTP_401_UNAUTHORIZED),
-        (get_document_url() + "/info/1", "GET", status.HTTP_401_UNAUTHORIZED),
-        (get_document_url() + "/1", "PUT", status.HTTP_401_UNAUTHORIZED),
-        (get_document_url() + "/1", "DELETE", status.HTTP_401_UNAUTHORIZED),
+        (get_file_url() + "/", "GET", status.HTTP_401_UNAUTHORIZED),
+        (get_file_url() + "/", "POST", status.HTTP_401_UNAUTHORIZED),
+        (get_file_url() + "/1", "PUT", status.HTTP_401_UNAUTHORIZED),
+        (get_file_url() + "/1", "DELETE", status.HTTP_401_UNAUTHORIZED),
+        (get_document_url() + "/", "GET", status.HTTP_401_UNAUTHORIZED),
+        (get_document_url() + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
     ],
 )
 def test_endpoints_should_refuse_non_authenticated_users_available(
@@ -59,7 +64,7 @@ def test_should_return_document_when_authorized(
     test_client, mock_document_owned_by_user, mock_get_document
 ):
     mock_get_user_id(test_client, 1)
-    response = test_client.get(get_document_url() + "/info/1")
+    response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == mock_api_doc().dict()
 
@@ -72,7 +77,7 @@ def test_should_raise_403_when_unauthorized(
         "perry.api.endpoints.document.document_owned_by_user",
         lambda *args, **kwargs: False,
     )
-    response = test_client.get(get_document_url() + "/info/1")
+    response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -84,7 +89,7 @@ def test_get_doc_raises_404_when_doc_not_found(
         "perry.api.endpoints.document.get_document",
         lambda *args, **kwargs: None,
     )
-    response = test_client.get(get_document_url() + "/info/1")
+    response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -92,5 +97,5 @@ def test_get_all_doc_info_returns_all_user_documents(
     test_client, mock_get_user_documents
 ):
     mock_get_user_id(test_client, 1)
-    response = test_client.get(get_document_url() + "/info/")
+    response = test_client.get(get_document_url() + "/")
     assert response.status_code == status.HTTP_200_OK
