@@ -230,3 +230,15 @@ def test_owned_non_existing_document_returns_false(test_db, create_user_in_db):
 
 def test_owned_non_existing_user_and_document_returns_false(test_db):
     assert not document_owned_by_user(test_db, -1, -1)
+
+
+def test_get_user_documents_returns_all_documents(
+    test_db, add_document_to_db, create_user_in_db
+):
+    user_id = create_user_in_db(username="owner", password="password")
+    doc_ids = [add_document_to_db(), add_document_to_db()]
+    update_document(test_db, doc_ids[0], user_ids=[user_id])
+    update_document(test_db, doc_ids[1], user_ids=[user_id])
+    docs = get_user_documents(test_db, user_id)
+    assert len(docs) == 2
+    assert set(d.id for d in docs) == set(doc_ids)

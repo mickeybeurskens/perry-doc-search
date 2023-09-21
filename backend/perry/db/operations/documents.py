@@ -113,6 +113,11 @@ def get_document(db: Session, document_id: int) -> Document:
     return db.query(Document).filter(Document.id == document_id).first()
 
 
+def get_user_documents(db: Session, user_id: int) -> list[Document]:
+    """Get all documents owned by a user."""
+    return get_user(db, user_id).documents
+
+
 def delete_document(db: Session, document_id: int):
     """Delete a document object from the database."""
     db_document = get_document(db, document_id)

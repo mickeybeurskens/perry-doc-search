@@ -8,6 +8,7 @@ from perry.db.operations.documents import (
     update_document,
     delete_document,
     document_owned_by_user,
+    get_user_documents,
 )
 from perry.db.session import DatabaseSessionManager as DSM
 
@@ -15,7 +16,7 @@ from perry.db.session import DatabaseSessionManager as DSM
 document_router = APIRouter()
 
 
-@document_router.get("/{document_id}", response_model=APIDocument)
+@document_router.get("/info/{document_id}", response_model=APIDocument)
 async def get_doc_by_id(
     document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
@@ -33,12 +34,16 @@ async def get_doc_by_id(
     return APIDocument(title=doc.title, id=doc.id)
 
 
-@document_router.get("/", response_model=list[APIDocument])
+@document_router.get("/info/", response_model=list[APIDocument])
 async def get_all_docs(db_user_id: Annotated[int, Depends(get_current_user_id)]):
-    pass
+    db_documents = get_user_documents(DSM.get_db_session, db_user_id)
+    docs = []
+    for doc in db_documents:
+        docs.append(APIDocument(title=doc.title, id=doc.id))
+    return docs
 
 
-@document_router.post("/", response_model=APIDocument)
+@document_router.post("/file/", response_model=APIDocument)
 async def create_doc(
     document: APIDocument,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
@@ -46,7 +51,7 @@ async def create_doc(
     pass
 
 
-@document_router.put("/{document_id}", response_model=APIDocument)
+@document_router.put("/file/{document_id}", response_model=APIDocument)
 async def update_doc(
     document_id: int,
     document: APIDocument,
@@ -55,7 +60,7 @@ async def update_doc(
     pass
 
 
-@document_router.delete("/{document_id}")
+@document_router.delete("/file/{document_id}")
 async def delete_doc(
     document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
