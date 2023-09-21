@@ -150,3 +150,13 @@ def update_document(
             users.append(get_user(db, user_id))
         db_document.users = users
     db.commit()
+
+
+def document_owned_by_user(db: Session, document_id: int, user_id: int):
+    doc = get_document(db, document_id)
+    user = get_user(db, user_id)
+    if doc is None or user is None or doc.users is None:
+        return False
+    if user in doc.users:
+        return True
+    return False

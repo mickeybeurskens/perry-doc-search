@@ -201,3 +201,32 @@ def test_update_document_none_empty_params(test_db, add_document_to_db):
     assert updated_doc.title == title
     update_document(test_db, doc_id, conversation_ids=[])
     assert len(updated_doc.conversations) == 0
+
+
+def test_owned_correctly_returns_true(test_db, add_document_to_db, create_user_in_db):
+    doc_id = add_document_to_db()
+    user_id = create_user_in_db(username="owner", password="password")
+    update_document(test_db, doc_id, user_ids=[user_id])
+    assert document_owned_by_user(test_db, doc_id, user_id)
+
+
+def test_owned_non_owned_document_returns_false(
+    test_db, add_document_to_db, create_user_in_db
+):
+    doc_id = add_document_to_db()
+    user_id = create_user_in_db(username="owner", password="password")
+    assert not document_owned_by_user(test_db, doc_id, user_id)
+
+
+def test_owned_non_existing_user_returns_false(test_db, add_document_to_db):
+    doc_id = add_document_to_db()
+    assert not document_owned_by_user(test_db, doc_id, -1)
+
+
+def test_owned_non_existing_document_returns_false(test_db, create_user_in_db):
+    user_id = create_user_in_db(username="owner", password="password")
+    assert not document_owned_by_user(test_db, -1, user_id)
+
+
+def test_owned_non_existing_user_and_document_returns_false(test_db):
+    assert not document_owned_by_user(test_db, -1, -1)
