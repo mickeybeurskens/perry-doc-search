@@ -66,3 +66,15 @@ def test_should_raise_403_when_unauthorized(
     )
     response = test_client.get("/documents/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_get_doc_raises_404_when_doc_not_found(
+    test_client, monkeypatch, mock_document_owned_by_user
+):
+    mock_get_user_id(test_client, 1)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.get_document",
+        lambda *args, **kwargs: None,
+    )
+    response = test_client.get("/documents/1")
+    assert response.status_code == status.HTTP_404_NOT_FOUND

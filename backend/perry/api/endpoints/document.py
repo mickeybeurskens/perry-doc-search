@@ -19,12 +19,17 @@ document_router = APIRouter()
 async def get_doc_by_id(
     document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
+    doc = get_document(DSM.get_db_session, document_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
     if not document_owned_by_user(DSM.get_db_session, document_id, db_user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to get document",
         )
-    doc = get_document(DSM.get_db_session, document_id)
     return APIDocument(title=doc.title, id=doc.id)
 
 
