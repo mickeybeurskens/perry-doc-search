@@ -160,6 +160,40 @@ def test_create_doc_update_error_should_remove_file(
     assert remove_file.call_count == 1
 
 
+@pytest.mark.parametrize(
+    "ownership, remove_success, expected_status",
+    [
+        (True, True, status.HTTP_200_OK),
+        (True, False, status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (False, True, status.HTTP_403_FORBIDDEN),
+    ],
+)
+def test_delete_file(
+    test_client, monkeypatch, ownership, remove_success, expected_status
+):
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        lambda *args, **kwargs: ownership,
+    )
+
+    if remove_success:
+        mock_remove_file = Mock(return_value=None)
+    else:
+        mock_remove_file = Mock(side_effect=Exception("Could not delete"))
+    monkeypatch.setattr("perry.api.endpoints.document.remove_file", mock_remove_file)
+
+    mock_get_user_id(test_client, 1)
+    response = test_client.delete(get_file_url() + "/1")
+
+    assert response.status_code == expected_status
+
+    if ownership:
+        assert mock_remove_file.called
+
+    if not ownership:
+        assert not mock_remove_file.called
+
+
 def test_should_return_document_when_authorized(
     test_client, mock_document_owned_by_user, mock_get_document
 ):

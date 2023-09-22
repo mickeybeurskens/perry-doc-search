@@ -49,26 +49,28 @@ async def upload_file(
     return {"id": doc_id}
 
 
-@file_router.get("/{document_id}", response_model=APIDocument)
-async def create_doc(
-    document_id: int,
-    db_user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    pass
-
-
-@file_router.put("/{document_id}", response_model=APIDocument)
-async def update_doc(
-    document_id: int,
-    document: APIDocument,
-    db_user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    pass
-
-
-@file_router.delete("/{document_id}")
-async def delete_doc(
+@file_router.delete("/{document_id}", status_code=status.HTTP_200_OK)
+async def delete_file(
     document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
+):
+    if not document_owned_by_user(DSM.get_db_session, document_id, db_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete document",
+        )
+    try:
+        remove_file(DSM.get_db_session, document_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not delete file",
+        )
+
+
+@file_router.get("/{document_id}", response_model=UploadFile)
+async def retrieve_file_binary(
+    document_id: int,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     pass
 
