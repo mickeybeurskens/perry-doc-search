@@ -161,10 +161,13 @@ def test_remove_user_from_document(test_db, add_document_to_db, create_user_in_d
 
 def test_document_title_description_should_update(test_db: Session, add_document_to_db):
     doc_id = add_document_to_db()
-    update_document(test_db, doc_id, title="New Title", description="New Description")
+    update_id = update_document(
+        test_db, doc_id, title="New Title", description="New Description"
+    )
     updated_doc = get_document(test_db, doc_id)
     assert updated_doc.title == "New Title"
     assert updated_doc.description == "New Description"
+    assert updated_doc.id == update_id
 
 
 def test_document_conversations_should_update(
@@ -172,9 +175,10 @@ def test_document_conversations_should_update(
 ):
     doc_id = add_document_to_db()
     conversation_ids = [add_conversation_to_db(), add_conversation_to_db()]
-    update_document(test_db, doc_id, conversation_ids=conversation_ids)
+    update_id = update_document(test_db, doc_id, conversation_ids=conversation_ids)
     updated_doc = get_document(test_db, doc_id)
     assert set(c.id for c in updated_doc.conversations) == set(conversation_ids)
+    assert updated_doc.id == update_id
 
 
 def test_document_users_should_update(test_db, add_document_to_db, create_user_in_db):
@@ -183,9 +187,10 @@ def test_document_users_should_update(test_db, add_document_to_db, create_user_i
         create_user_in_db(username="hari", password="seldon"),
         create_user_in_db(username="psychohistory", password="foundation"),
     ]
-    update_document(test_db, doc_id, user_ids=user_ids)
+    update_id = update_document(test_db, doc_id, user_ids=user_ids)
     updated_doc = get_document(test_db, doc_id)
     assert set(u.id for u in updated_doc.users) == set(user_ids)
+    assert updated_doc.id == update_id
 
 
 def test_update_document_invalid_id(test_db):
@@ -196,7 +201,8 @@ def test_update_document_none_empty_params(test_db, add_document_to_db):
     doc_id = add_document_to_db()
     title = "First Foundation"
     update_document(test_db, doc_id, title=title)
-    update_document(test_db, doc_id, title=None)
+    update_id = update_document(test_db, doc_id, title=None)
+    assert update_id == None
     updated_doc = get_document(test_db, doc_id)
     assert updated_doc.title == title
     update_document(test_db, doc_id, conversation_ids=[])

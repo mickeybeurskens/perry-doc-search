@@ -134,27 +134,34 @@ def update_document(
     description: str = None,
     conversation_ids: list[int] = None,
     user_ids: list[int] = None,
-):
+) -> int:
+    doc_id_updated = None
     db_document = db.query(Document).filter(Document.id == document_id).first()
     if db_document is None:
         return None
     if title is not None:
         db_document.title = title
+        doc_id_updated = document_id
     if file_path is not None:
         db_document.file_path = file_path
+        doc_id_updated = document_id
     if description is not None:
         db_document.description = description
+        doc_id_updated = document_id
     if conversation_ids is not None:
         convs = []
         for conversation_id in conversation_ids:
             convs.append(read_conversation(db, conversation_id))
         db_document.conversations = convs
+        doc_id_updated = document_id
     if user_ids is not None:
         users = []
         for user_id in user_ids:
             users.append(get_user(db, user_id))
         db_document.users = users
+        doc_id_updated = document_id
     db.commit()
+    return doc_id_updated
 
 
 def document_owned_by_user(db: Session, document_id: int, user_id: int):

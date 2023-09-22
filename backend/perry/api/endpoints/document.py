@@ -1,8 +1,10 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, File, UploadFile
 from perry.api.authentication import get_current_user_id
 from perry.api.schemas import APIDocument, APIUser
 from perry.db.operations.documents import (
+    save_file,
+    remove_file,
     get_document,
     create_document,
     update_document,
@@ -13,8 +15,60 @@ from perry.db.operations.documents import (
 from perry.db.session import DatabaseSessionManager as DSM
 
 
-document_router = APIRouter()
 file_router = APIRouter()
+document_router = APIRouter()
+
+
+@file_router.post("/", status_code=status.HTTP_201_CREATED)
+async def upload_file(
+    file: UploadFile,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    if not file.content_type == "application/pdf":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a PDF",
+        )
+    try:
+        doc_id = save_file(DSM.get_db_session, file, ".pdf")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not save file",
+        )
+    try:
+        update_document(DSM.get_db_session, doc_id, user_ids=[db_user_id])
+    except Exception as e:
+        remove_file(DSM.get_db_session, doc_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not update document",
+        )
+    return {"id": doc_id}
+
+
+@file_router.get("/{document_id}", response_model=APIDocument)
+async def create_doc(
+    document_id: int,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    pass
+
+
+@file_router.put("/{document_id}", response_model=APIDocument)
+async def update_doc(
+    document_id: int,
+    document: APIDocument,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    pass
+
+
+@file_router.delete("/{document_id}")
+async def delete_doc(
+    document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
+):
+    pass
 
 
 @document_router.get("/{document_id}", response_model=APIDocument)
@@ -42,35 +96,3 @@ async def get_all_docs(db_user_id: Annotated[int, Depends(get_current_user_id)])
     for doc in db_documents:
         docs.append(APIDocument(title=doc.title, id=doc.id))
     return docs
-
-
-@file_router.get("/", response_model=APIDocument)
-async def create_doc(
-    document: APIDocument,
-    db_user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    pass
-
-
-@file_router.post("/", response_model=APIDocument)
-async def create_doc(
-    document: APIDocument,
-    db_user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    pass
-
-
-@file_router.put("/{document_id}", response_model=APIDocument)
-async def update_doc(
-    document_id: int,
-    document: APIDocument,
-    db_user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    pass
-
-
-@file_router.delete("/{document_id}")
-async def delete_doc(
-    document_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
-):
-    pass

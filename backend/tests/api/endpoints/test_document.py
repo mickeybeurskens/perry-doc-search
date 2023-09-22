@@ -1,8 +1,7 @@
+from unittest.mock import Mock
 from perry.api.endpoints.document import *
-from fastapi import status
 from tests.conftest import get_mock_secret_key
 from tests.api.fixtures import *
-from unittest.mock import patch
 
 
 def get_document_url():
@@ -42,10 +41,28 @@ def mock_get_user_documents(monkeypatch):
     )
 
 
+@pytest.fixture(scope="function")
+def mock_create_doc_db_operations(monkeypatch, test_client):
+    mock_save_file = Mock(return_value=1)
+    mock_update_document = Mock(side_effect=lambda db, doc_id, *args, **kwargs: doc_id)
+    mock_remove_file = Mock(return_value=None)
+
+    monkeypatch.setattr("perry.api.endpoints.document.save_file", mock_save_file)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.update_document", mock_update_document
+    )
+    monkeypatch.setattr("perry.api.endpoints.document.remove_file", mock_remove_file)
+    user_id = 1
+    mock_get_user_id(test_client, user_id)
+    file_content = b"Some PDF content"
+
+    return mock_save_file, mock_update_document, mock_remove_file, file_content, user_id
+
+
 @pytest.mark.parametrize(
     "endpoint, method, status_code",
     [
-        (get_file_url() + "/", "GET", status.HTTP_401_UNAUTHORIZED),
+        (get_file_url() + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
         (get_file_url() + "/", "POST", status.HTTP_401_UNAUTHORIZED),
         (get_file_url() + "/1", "PUT", status.HTTP_401_UNAUTHORIZED),
         (get_file_url() + "/1", "DELETE", status.HTTP_401_UNAUTHORIZED),
@@ -58,6 +75,86 @@ def test_endpoints_should_refuse_non_authenticated_users_available(
 ):
     response = test_client.request(method, endpoint)
     assert response.status_code == status_code
+
+
+def test_create_doc_valid_pdf(test_client, mock_create_doc_db_operations):
+    (
+        save_file,
+        update_document,
+        remove_file,
+        file_content,
+        _,
+    ) = mock_create_doc_db_operations
+
+    response = test_client.post(
+        get_file_url() + "/",
+        files={"file": ("filename.pdf", file_content, "application/pdf")},
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() == {"id": 1}
+    assert save_file.call_count == 1
+    assert update_document.call_count == 1
+    assert remove_file.call_count == 0
+
+
+def test_create_doc_invalid_file_type(test_client, mock_create_doc_db_operations):
+    (
+        save_file,
+        update_document,
+        remove_file,
+        file_content,
+        _,
+    ) = mock_create_doc_db_operations
+
+    response = test_client.post(
+        get_file_url() + "/",
+        files={"file": ("filename.txt", file_content, "application/txt")},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert save_file.call_count == 0
+    assert update_document.call_count == 0
+    assert remove_file.call_count == 0
+
+
+def test_create_doc_server_error(
+    test_client, monkeypatch, mock_create_doc_db_operations
+):
+    _, update_document, remove_file, file_content, _ = mock_create_doc_db_operations
+
+    def mock_save_file(*args, **kwargs):
+        raise Exception("Server Error")
+
+    monkeypatch.setattr("perry.api.endpoints.document.save_file", mock_save_file)
+    response = test_client.post(
+        get_file_url() + "/",
+        files={"file": ("filename.pdf", file_content, "application/pdf")},
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert update_document.call_count == 0
+    assert remove_file.call_count == 0
+
+
+def test_create_doc_update_error_should_remove_file(
+    test_client, monkeypatch, mock_create_doc_db_operations
+):
+    save_file, _, remove_file, file_content, _ = mock_create_doc_db_operations
+
+    def mock_update_file(*args, **kwargs):
+        raise Exception("Server Error")
+
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.update_document", mock_update_file
+    )
+    response = test_client.post(
+        get_file_url() + "/",
+        files={"file": ("filename.pdf", file_content, "application/pdf")},
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert save_file.call_count == 1
+    assert remove_file.call_count == 1
 
 
 def test_should_return_document_when_authorized(

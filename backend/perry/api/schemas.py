@@ -17,5 +17,6 @@ class APIUser(BaseModel):
 
 
 class APIDocument(BaseModel):
-    title: str
     id: int
+    title: str
+    description: str | None = ""
