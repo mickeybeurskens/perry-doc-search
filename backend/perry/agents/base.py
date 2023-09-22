@@ -1,10 +1,27 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, Type
+from threading import Lock
+from functools import wraps
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from perry.db.models import Agent as DBAgent
 from perry.db.operations.agents import read_agent, update_agent
+
+
+def busy_toggle(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with self._busy_lock:
+            self.busy = True
+        try:
+            result = func(self, *args, **kwargs)
+        finally:
+            with self._busy_lock:
+                self.busy = False
+        return result
+
+    return wrapper
 
 
 class BaseAgentConfig(BaseModel):
@@ -15,6 +32,8 @@ class BaseAgent(ABC):
     def __init__(self, db_session: Session, config: dict, agent_id: int):
         self.config = self._get_config_instance(config)
         self.id = agent_id
+        self.busy = False
+        self._busy_lock = Lock()
         self._db_session = db_session
         self._agent_data = self._load_agent_data(db_session, agent_id)
         self._assert_conversation_data(self._agent_data)
@@ -25,8 +44,14 @@ class BaseAgent(ABC):
         """Agent specific setup logic."""
 
     @abstractmethod
+    async def _on_query(self, query: str) -> str:
+        """Query the agent and get a response."""
+
+    @busy_toggle
     async def query(self, query: str) -> str:
         """Query the agent and get a response."""
+        response = await self._on_query(query)
+        return response
 
     @classmethod
     @abstractmethod
@@ -37,6 +62,7 @@ class BaseAgent(ABC):
     def _on_save(self):
         """Agent specific save logic."""
 
+    @busy_toggle
     def save(self):
         """Save the state of the agent."""
         update_agent(self._db_session, self.id, config_data=self.config.dict())

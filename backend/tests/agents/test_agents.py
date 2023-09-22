@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import PropertyMock
 from perry.agents.echo import EchoAgent
 from perry.agents.base import BaseAgentConfig, BaseAgent
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
@@ -79,3 +80,34 @@ def test_load_should_raise_value_error_when_agent_not_connected_to_conversation(
     agent_id = add_agent_to_db()
     with pytest.raises(ValueError):
         agent_class.load(test_db, agent_id)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("agent_class, config", agents_to_test)
+async def test_busy_toggle_decorator_is_called(
+    agent_class, config, test_db, add_agent_to_db, add_conversation_to_db, monkeypatch
+):
+    agent_id = add_agent_to_db()
+    conversation_id = add_conversation_to_db()
+    update_agent(test_db, agent_id, conversation_id=conversation_id)
+
+    async def mock_query(self, query):
+        return "test response"
+
+    mock_busy = PropertyMock(return_value=False)
+    agent_class.busy = mock_busy
+    agent_class._on_query = mock_query
+    agent_class._on_save = lambda self: None
+
+    agent_instance = agent_class(test_db, config, agent_id)
+    mock_busy.call_count == 3
+
+    mock_busy.reset_mock()
+
+    agent_instance.save()
+    assert mock_busy.call_count == 2
+
+    mock_busy.reset_mock()
+
+    await agent_instance.query("test query")
+    assert mock_busy.call_count == 2

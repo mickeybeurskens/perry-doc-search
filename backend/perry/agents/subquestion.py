@@ -45,7 +45,7 @@ class SubquestionAgent(BaseAgent):
         )
         self._engine = self._create_engine()
 
-    async def query(self, query: str) -> str:
+    async def _on_query(self, query: str) -> str:
         return await self._engine.aquery(query)
 
     def _on_save(self):

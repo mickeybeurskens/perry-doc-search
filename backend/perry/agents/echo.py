@@ -8,7 +8,7 @@ class EchoAgent(BaseAgent):
     def _setup(self):
         pass
 
-    async def query(self, query: str) -> str:
+    async def _on_query(self, query: str) -> str:
         return "Echo: " + query
 
     def _on_save(self):
