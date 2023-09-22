@@ -71,6 +71,12 @@ async def retrieve_file_binary(
     document_id: int,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
+    db_doc = get_document(DSM.get_db_session, document_id)
+    if not db_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
     if not document_owned_by_user(DSM.get_db_session, document_id, db_user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -83,7 +89,7 @@ async def retrieve_file_binary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not load file",
         )
-    return UploadFile(file=file_bytes, filename="filename.pdf")
+    return UploadFile(file=file_bytes, filename=db_doc.title)
 
 
 @document_router.get("/{document_id}", response_model=APIDocument)

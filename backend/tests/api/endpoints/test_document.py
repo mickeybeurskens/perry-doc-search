@@ -2,6 +2,7 @@ from unittest.mock import Mock
 from perry.api.endpoints.document import *
 from tests.conftest import get_mock_secret_key
 from tests.api.fixtures import *
+from perry.db.models import Document
 
 
 def get_document_url():
@@ -57,6 +58,26 @@ def mock_create_doc_db_operations(monkeypatch, test_client):
     file_content = b"Some PDF content"
 
     return mock_save_file, mock_update_document, mock_remove_file, file_content, user_id
+
+
+@pytest.fixture(scope="function")
+def mock_retrieve_binary_file_setup(monkeypatch, test_client):
+    mock_get_user_id(test_client, 1)
+    document_id = 1
+
+    mock_document_owned_by_user = Mock(return_value=True)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        mock_document_owned_by_user,
+    )
+    db_doc_mock = Mock(spec=Document)
+    db_doc_mock.title = "filename.pdf"
+    mock_get_document = Mock(return_value=db_doc_mock)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.get_document",
+        mock_get_document,
+    )
+    return document_id, mock_document_owned_by_user, mock_get_document
 
 
 @pytest.mark.parametrize(
@@ -193,30 +214,31 @@ def test_delete_file(
         assert not mock_remove_file.called
 
 
-def test_retrieve_file_binary_unowned_document(monkeypatch, test_client):
-    mock_get_user_id(test_client, 1)
-    document_id = 1
+def test_retrieve_file_binary_unowned_document(
+    test_client, monkeypatch, mock_retrieve_binary_file_setup
+):
+    document_id, _, mock_get_document = mock_retrieve_binary_file_setup
 
     mock_document_owned_by_user = Mock(return_value=False)
     monkeypatch.setattr(
         "perry.api.endpoints.document.document_owned_by_user",
         mock_document_owned_by_user,
     )
+
     response = test_client.get(get_file_url() + "/" + str(document_id))
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     mock_document_owned_by_user.assert_called_once()
 
 
-def test_retrieve_file_binary_file_not_loaded(monkeypatch, test_client):
-    mock_get_user_id(test_client, 1)
-    document_id = 1
-
-    mock_document_owned_by_user = Mock(return_value=True)
-    monkeypatch.setattr(
-        "perry.api.endpoints.document.document_owned_by_user",
+def test_retrieve_file_binary_file_not_loaded(
+    monkeypatch, test_client, mock_retrieve_binary_file_setup
+):
+    (
+        document_id,
         mock_document_owned_by_user,
-    )
+        mock_get_document,
+    ) = mock_retrieve_binary_file_setup
 
     mock_load_file = Mock(side_effect=Exception("Database error"))
     monkeypatch.setattr("perry.api.endpoints.document.load_file", mock_load_file)
@@ -224,17 +246,17 @@ def test_retrieve_file_binary_file_not_loaded(monkeypatch, test_client):
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     mock_load_file.assert_called_once()
+    mock_document_owned_by_user.assert_called_once()
 
 
-def test_retrieve_file_binary_successful(monkeypatch, test_client):
-    mock_get_user_id(test_client, 1)
-    document_id = 1
-
-    mock_document_owned_by_user = Mock(return_value=True)
-    monkeypatch.setattr(
-        "perry.api.endpoints.document.document_owned_by_user",
+def test_retrieve_file_binary_successful(
+    monkeypatch, test_client, mock_retrieve_binary_file_setup
+):
+    (
+        document_id,
         mock_document_owned_by_user,
-    )
+        mock_get_document,
+    ) = mock_retrieve_binary_file_setup
 
     mock_load_file = Mock(return_value=b"some_file_content")
     monkeypatch.setattr("perry.api.endpoints.document.load_file", mock_load_file)
@@ -246,6 +268,8 @@ def test_retrieve_file_binary_successful(monkeypatch, test_client):
     assert content_dict["filename"] == "filename.pdf"
     assert content_dict["file"] == "some_file_content"
     mock_load_file.assert_called_once()
+    mock_document_owned_by_user.assert_called_once()
+    mock_get_document.assert_called_once()
 
 
 def test_should_return_document_when_authorized(
