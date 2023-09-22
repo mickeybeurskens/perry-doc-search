@@ -64,7 +64,6 @@ def mock_create_doc_db_operations(monkeypatch, test_client):
     [
         (get_file_url() + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
         (get_file_url() + "/", "POST", status.HTTP_401_UNAUTHORIZED),
-        (get_file_url() + "/1", "PUT", status.HTTP_401_UNAUTHORIZED),
         (get_file_url() + "/1", "DELETE", status.HTTP_401_UNAUTHORIZED),
         (get_document_url() + "/", "GET", status.HTTP_401_UNAUTHORIZED),
         (get_document_url() + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
@@ -192,6 +191,61 @@ def test_delete_file(
 
     if not ownership:
         assert not mock_remove_file.called
+
+
+def test_retrieve_file_binary_unowned_document(monkeypatch, test_client):
+    mock_get_user_id(test_client, 1)
+    document_id = 1
+
+    mock_document_owned_by_user = Mock(return_value=False)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        mock_document_owned_by_user,
+    )
+    response = test_client.get(get_file_url() + "/" + str(document_id))
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    mock_document_owned_by_user.assert_called_once()
+
+
+def test_retrieve_file_binary_file_not_loaded(monkeypatch, test_client):
+    mock_get_user_id(test_client, 1)
+    document_id = 1
+
+    mock_document_owned_by_user = Mock(return_value=True)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        mock_document_owned_by_user,
+    )
+
+    mock_load_file = Mock(side_effect=Exception("Database error"))
+    monkeypatch.setattr("perry.api.endpoints.document.load_file", mock_load_file)
+    response = test_client.get(get_file_url() + "/" + str(document_id))
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    mock_load_file.assert_called_once()
+
+
+def test_retrieve_file_binary_successful(monkeypatch, test_client):
+    mock_get_user_id(test_client, 1)
+    document_id = 1
+
+    mock_document_owned_by_user = Mock(return_value=True)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        mock_document_owned_by_user,
+    )
+
+    mock_load_file = Mock(return_value=b"some_file_content")
+    monkeypatch.setattr("perry.api.endpoints.document.load_file", mock_load_file)
+
+    response = test_client.get(get_file_url() + "/" + str(document_id))
+    content_dict = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert content_dict["filename"] == "filename.pdf"
+    assert content_dict["file"] == "some_file_content"
+    mock_load_file.assert_called_once()
 
 
 def test_should_return_document_when_authorized(

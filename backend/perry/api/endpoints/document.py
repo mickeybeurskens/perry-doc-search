@@ -5,6 +5,7 @@ from perry.api.schemas import APIDocument, APIUser
 from perry.db.operations.documents import (
     save_file,
     remove_file,
+    load_file,
     get_document,
     create_document,
     update_document,
@@ -72,7 +73,19 @@ async def retrieve_file_binary(
     document_id: int,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    pass
+    if not document_owned_by_user(DSM.get_db_session, document_id, db_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to get document",
+        )
+    try:
+        file_bytes = load_file(DSM.get_db_session, document_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not load file",
+        )
+    return UploadFile(file=file_bytes, filename="filename.pdf")
 
 
 @document_router.get("/{document_id}", response_model=APIDocument)
