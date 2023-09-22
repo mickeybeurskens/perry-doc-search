@@ -1,15 +1,13 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile
 from perry.api.authentication import get_current_user_id
-from perry.api.schemas import APIDocument, APIUser
+from perry.api.schemas import APIDocument
 from perry.db.operations.documents import (
     save_file,
     remove_file,
     load_file,
     get_document,
-    create_document,
     update_document,
-    delete_document,
     document_owned_by_user,
     get_user_documents,
 )
