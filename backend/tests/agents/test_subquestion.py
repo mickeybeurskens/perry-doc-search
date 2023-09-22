@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from tests.agents.fixtures_subquestion import *
+from tests.agents.fixtures import *
 from llama_index.query_engine import SubQuestionQueryEngine
 
 

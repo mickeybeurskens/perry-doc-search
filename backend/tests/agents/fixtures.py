@@ -1,12 +1,33 @@
 import pytest
 from llama_index.llms.mock import MockLLM
 from llama_index.embeddings.langchain import LangchainEmbedding
-from langchain.embeddings.fake import FakeEmbeddings
 from llama_index import ServiceContext
+from langchain.embeddings.fake import FakeEmbeddings
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
+from sqlalchemy.orm.session import Session
 from fpdf import FPDF
 from pathlib import Path
 from perry.db.operations.documents import update_document
+from perry.agents.base import BaseAgent, BaseAgentConfig
+
+
+class DummyAgent(BaseAgent):
+    def _on_query(self, query: str) -> str:
+        return "dummy_response"
+
+    def _on_save(self):
+        pass
+
+    @classmethod
+    def _on_load(cls, db_session: Session, config: BaseAgentConfig, agent_id: int):
+        return cls()
+
+    def _setup(self):
+        pass
+
+    @classmethod
+    def _get_config_instance(cls, config_data: dict) -> BaseAgentConfig:
+        return BaseAgentConfig(**config_data)
 
 
 def create_mock_llm():

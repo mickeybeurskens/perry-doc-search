@@ -36,7 +36,6 @@ class BaseAgent(ABC):
         self._busy_lock = Lock()
         self._db_session = db_session
         self._agent_data = self._load_agent_data(db_session, agent_id)
-        self._assert_conversation_data(self._agent_data)
         self._setup()
 
     @abstractmethod
@@ -55,7 +54,7 @@ class BaseAgent(ABC):
 
     @classmethod
     @abstractmethod
-    def _get_config_instance(config_data: dict) -> BaseAgentConfig:
+    def _get_config_instance(cls, config_data: dict) -> BaseAgentConfig:
         """Return the config class used."""
 
     @abstractmethod
@@ -91,17 +90,8 @@ class BaseAgent(ABC):
     @classmethod
     def _get_saved_config(cls, db_session: Session, agent_id: int) -> BaseAgentConfig:
         agent_data = cls._load_agent_data(db_session, agent_id)
-        cls._assert_conversation_data(agent_data)
         cls._assert_config_data(agent_data)
         return agent_data.config
-
-    @staticmethod
-    def _assert_conversation_data(db_agend: DBAgent):
-        conversation_id = db_agend.conversation_id
-        if conversation_id is None:
-            raise ValueError(
-                f"Agent with id {db_agend.id} not connected to a conversation."
-            )
 
     @staticmethod
     def _assert_config_data(db_agend: DBAgent):
@@ -121,14 +111,6 @@ class AgentRegistry:
 
     def register_agent(self, agent_type: str, agent_class: Type[BaseAgent]):
         self._agent_registry[agent_type] = agent_class
-
-    def create_agent(
-        self, agent_type: str, config: BaseModel, agent_id: int
-    ) -> BaseAgent:
-        agent_class = self._agent_registry.get(agent_type)
-        if not agent_class:
-            raise ValueError(f"Agent type {agent_type} not found.")
-        return agent_class(config, agent_id)
 
     def get_agent_class(self, agent_type: str) -> Type[BaseAgent]:
         agent_class = self._agent_registry.get(agent_type)
