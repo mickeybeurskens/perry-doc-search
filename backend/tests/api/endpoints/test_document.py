@@ -3,14 +3,15 @@ from perry.api.endpoints.document import *
 from tests.conftest import get_mock_secret_key
 from tests.api.fixtures import *
 from perry.db.models import Document
+from perry.api.app import DOCUMENTS_URL, FILES_URL
 
 
 def get_document_url():
-    return "/documents/info"
+    return DOCUMENTS_URL
 
 
 def get_file_url():
-    return "/documents/file"
+    return FILES_URL
 
 
 def mock_get_user_id(test_client, user_id):

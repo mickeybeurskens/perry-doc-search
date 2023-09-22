@@ -1,10 +1,11 @@
 from datetime import timedelta
 import freezegun
+from fastapi import status
+from perry.api.app import USERS_URL
 from perry.db.models import User
 from perry.db.operations.users import get_user, delete_user
 from perry.db.operations.users import get_user
 from tests.api.fixtures import *
-from fastapi import status
 
 
 class FakeUser:
@@ -16,7 +17,7 @@ class FakeUser:
 
 
 def users_url():
-    return "/users"
+    return USERS_URL
 
 
 def test_should_check_endpoint_availability(test_client):
