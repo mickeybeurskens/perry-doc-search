@@ -37,7 +37,9 @@ async def upload_file(
             detail="Could not save file",
         )
     try:
-        update_document(DSM.get_db_session, doc_id, user_ids=[db_user_id])
+        update_document(
+            DSM.get_db_session, doc_id, title=file.filename, user_ids=[db_user_id]
+        )
     except Exception as e:
         remove_file(DSM.get_db_session, doc_id)
         raise HTTPException(

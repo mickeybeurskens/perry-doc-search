@@ -85,16 +85,19 @@ def test_create_doc_valid_pdf(test_client, mock_create_doc_db_operations):
         file_content,
         _,
     ) = mock_create_doc_db_operations
+    file_name = "filename.pdf"
 
     response = test_client.post(
         get_file_url() + "/",
-        files={"file": ("filename.pdf", file_content, "application/pdf")},
+        files={"file": (file_name, file_content, "application/pdf")},
     )
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == {"id": 1}
     assert save_file.call_count == 1
     assert update_document.call_count == 1
+    assert update_document.call_args[1]["title"] == file_name
+    assert update_document.call_args[1]["user_ids"] == [1]
     assert remove_file.call_count == 0
 
 
