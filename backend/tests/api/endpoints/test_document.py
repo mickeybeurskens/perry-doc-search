@@ -14,12 +14,16 @@ def get_file_url():
     return FILES_URL
 
 
-def mock_get_user_id(test_client, user_id):
-    test_client.app.dependency_overrides[get_current_user_id] = lambda: user_id
-
-
 def mock_api_doc(*args, **kwargs):
     return APIDocument(title="Test Document", id=1)
+
+
+@pytest.fixture(scope="function")
+def mock_get_user_id(test_client):
+    user_id = 1
+    test_client.app.dependency_overrides[get_current_user_id] = lambda: user_id
+    yield user_id
+    test_client.app.dependency_overrides.pop(get_current_user_id)
 
 
 @pytest.fixture(scope="function")
@@ -44,7 +48,7 @@ def mock_get_user_documents(monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def mock_create_doc_db_operations(monkeypatch, test_client):
+def mock_create_doc_db_operations(monkeypatch, test_client, mock_get_user_id):
     mock_save_file = Mock(return_value=1)
     mock_update_document = Mock(side_effect=lambda db, doc_id, *args, **kwargs: doc_id)
     mock_remove_file = Mock(return_value=None)
@@ -54,16 +58,14 @@ def mock_create_doc_db_operations(monkeypatch, test_client):
         "perry.api.endpoints.document.update_document", mock_update_document
     )
     monkeypatch.setattr("perry.api.endpoints.document.remove_file", mock_remove_file)
-    user_id = 1
-    mock_get_user_id(test_client, user_id)
+    user_id = mock_get_user_id
     file_content = b"Some PDF content"
 
     return mock_save_file, mock_update_document, mock_remove_file, file_content, user_id
 
 
 @pytest.fixture(scope="function")
-def mock_retrieve_binary_file_setup(monkeypatch, test_client):
-    mock_get_user_id(test_client, 1)
+def mock_retrieve_binary_file_setup(monkeypatch, mock_get_user_id):
     document_id = 1
 
     mock_document_owned_by_user = Mock(return_value=True)
@@ -190,7 +192,12 @@ def test_create_doc_update_error_should_remove_file(
     ],
 )
 def test_delete_file(
-    test_client, monkeypatch, ownership, remove_success, expected_status
+    test_client,
+    monkeypatch,
+    ownership,
+    remove_success,
+    expected_status,
+    mock_get_user_id,
 ):
     monkeypatch.setattr(
         "perry.api.endpoints.document.document_owned_by_user",
@@ -203,7 +210,6 @@ def test_delete_file(
         mock_remove_file = Mock(side_effect=Exception("Could not delete"))
     monkeypatch.setattr("perry.api.endpoints.document.remove_file", mock_remove_file)
 
-    mock_get_user_id(test_client, 1)
     response = test_client.delete(get_file_url() + "/1")
 
     assert response.status_code == expected_status
@@ -274,18 +280,16 @@ def test_retrieve_file_binary_successful(
 
 
 def test_should_return_document_when_authorized(
-    test_client, mock_document_owned_by_user, mock_get_document
+    test_client, mock_document_owned_by_user, mock_get_document, mock_get_user_id
 ):
-    mock_get_user_id(test_client, 1)
     response = test_client.get(get_document_url() + "/1")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == mock_api_doc().dict()
 
 
 def test_should_raise_403_when_unauthorized(
-    test_client, monkeypatch, mock_get_document
+    test_client, monkeypatch, mock_get_document, mock_get_user_id
 ):
-    mock_get_user_id(test_client, 1)
     monkeypatch.setattr(
         "perry.api.endpoints.document.document_owned_by_user",
         lambda *args, **kwargs: False,
@@ -295,9 +299,8 @@ def test_should_raise_403_when_unauthorized(
 
 
 def test_get_doc_raises_404_when_doc_not_found(
-    test_client, monkeypatch, mock_document_owned_by_user
+    test_client, monkeypatch, mock_document_owned_by_user, mock_get_user_id
 ):
-    mock_get_user_id(test_client, 1)
     monkeypatch.setattr(
         "perry.api.endpoints.document.get_document",
         lambda *args, **kwargs: None,
@@ -307,8 +310,7 @@ def test_get_doc_raises_404_when_doc_not_found(
 
 
 def test_get_all_doc_info_returns_all_user_documents(
-    test_client, mock_get_user_documents
+    test_client, mock_get_user_documents, mock_get_user_id
 ):
-    mock_get_user_id(test_client, 1)
     response = test_client.get(get_document_url() + "/")
     assert response.status_code == status.HTTP_200_OK

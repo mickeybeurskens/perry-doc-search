@@ -75,6 +75,8 @@ def create_conversation_mock(test_client, monkeypatch):
         "mock_update_document": mock_update_document,
     }
 
+    test_client.app.dependency_overrides.pop(get_current_user_id)
+
 
 @pytest.mark.parametrize(
     "endpoint, method, status_code",

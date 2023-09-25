@@ -43,7 +43,6 @@ async def conversation_agent_setup(
     db_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     db = DSM.get_db_session
-    # check doc ids
     docs = get_user_documents(db, db_user_id)
     user_document_ids = [doc.id for doc in docs]
     if not set(conversation_config.doc_ids).issubset(set(user_document_ids)):
@@ -52,8 +51,6 @@ async def conversation_agent_setup(
             detail="Invalid document ids provided.",
         )
 
-    # create agent
-    # check type in the agent and return a class instance
     try:
         agent_class = AgentRegistry.get_agent_class(conversation_config.agent_type)
     except Exception:
@@ -78,7 +75,7 @@ async def conversation_agent_setup(
             conv_ids = [conv.id for conv in doc.conversations]
             update_document(db, doc.id, conversation_id=conv_ids + [conversation_id])
     except Exception:
-        remove_conversation(db, conversation_id)
+        delete_conversation(db, conversation_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create conversation.",
@@ -94,7 +91,7 @@ async def get_conversation_info(
 
 
 @conversation_router.delete("/{conversation_id}", status_code=status.HTTP_200_OK)
-async def remove_conversation(
+async def remove_conversation_history(
     conversation_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
     pass
