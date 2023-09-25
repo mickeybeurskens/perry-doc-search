@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "streamlitapp"
+name = "vulcan-backend"
 version = "0.1.0"
 description = "Perry streamlit app"
 authors = ["mickeybeurskens <mickeybeurskens@gmail.com>"]
