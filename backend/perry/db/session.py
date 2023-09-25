@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
+from perry.db.models import Base
 
 
 class DatabaseSessionManager:
@@ -12,6 +13,7 @@ class DatabaseSessionManager:
     def get_engine(cls):
         if cls._engine is None:
             cls._engine = create_engine(f"sqlite:///./{cls._db_name}.db")
+            Base.metadata.create_all(bind=cls._engine)
         return cls._engine
 
     @classmethod

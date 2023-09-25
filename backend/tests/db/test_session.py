@@ -1,9 +1,12 @@
 import pytest
+from unittest.mock import Mock
 from perry.db.session import DatabaseSessionManager
 
 
 def test_singleton_behavior(monkeypatch):
+    base = Mock()
     monkeypatch.setattr("perry.db.session.create_engine", lambda x: "fake_engine")
+    monkeypatch.setattr("perry.db.session.Base", base)
 
     engine1 = DatabaseSessionManager.get_engine()
     engine2 = DatabaseSessionManager.get_engine()
@@ -17,7 +20,9 @@ def test_singleton_behavior(monkeypatch):
 
 
 def test_lazy_initialization(monkeypatch):
+    base = Mock()
     monkeypatch.setattr("perry.db.session.create_engine", lambda x: "fake_engine")
+    monkeypatch.setattr("perry.db.session.Base", base)
 
     DatabaseSessionManager._engine = None
     DatabaseSessionManager._SessionLocal = None
