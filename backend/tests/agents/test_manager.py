@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 from perry.agents.manager import AgentManager
 from tests.agents.fixtures import DummyAgent
 from datetime import datetime, timedelta
@@ -10,8 +11,9 @@ def mock_time():
 
 
 @pytest.fixture
-def manager(test_db):
-    return AgentManager(test_db)
+def manager():
+    yield AgentManager()
+    AgentManager.reset()
 
 
 @pytest.fixture
@@ -23,63 +25,96 @@ def dummy_agent(test_db, add_agent_to_db):
         return agent
 
 
-def test_load_agent_populates_dict(dummy_agent, manager, monkeypatch):
+def test_load_agent_populates_dict(test_db, dummy_agent, manager, monkeypatch):
     monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
     monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
 
-    agent = manager.load_agent("test_id")
-    assert "test_id" in manager.agent_dict
-    assert manager.agent_dict["test_id"]["agent"] == agent
+    test_id = 1
+    agent = manager.load_agent(test_db, test_id)
+    assert test_id in manager.agent_dict
+    assert manager.agent_dict[test_id]["agent"] == agent
 
 
-def test_load_agent_raises_error_on_missing_agent(manager, monkeypatch):
+def test_load_agent_raises_error_on_missing_agent(test_db, manager, monkeypatch):
     monkeypatch.setattr("perry.db.operations.agents.read_agent", lambda db, id: None)
 
     with pytest.raises(ValueError):
-        manager.load_agent("missing_id")
+        manager.load_agent(test_db, -1)
 
 
-def test_remove_agent_deletes_from_dict(dummy_agent, manager, monkeypatch):
+def test_id_should_be_int(test_db, manager):
+    with pytest.raises(ValueError):
+        manager.load_agent(test_db, "not_an_int")
+
+
+def test_remove_agent_deletes_from_dict(test_db, dummy_agent, manager, monkeypatch):
+    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
+    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
+
+    test_id = 1
+    manager.load_agent(test_db, test_id)
+    assert test_id in manager.agent_dict
+    manager._remove_agent(test_id)
+    assert test_id not in manager.agent_dict
+
+
+def test_reset_should_reset_state(test_db, dummy_agent, manager, monkeypatch):
+    AgentManager.agent_dict = {1: "dummy"}
+    AgentManager.expiry_queue = "dummy"
+    AgentManager.lock = "dummy"
+    AgentManager._cleanup_timeout = "dummy"
+
+    manager.reset()
+
+    assert manager.agent_dict == {}
+    assert manager.expiry_queue.empty()
+    assert manager.lock is not None
+    assert isinstance(manager._cleanup_timeout, timedelta)
+
+
+def test_remove_agent_does_not_delete_busy_agent(
+    test_db, dummy_agent, manager, monkeypatch
+):
     # Mock the read_agent and BaseAgent.load functions
     monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
     monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
 
-    agent = manager.load_agent("test_id")
-    manager._remove_agent("test_id")
-    assert "test_id" not in manager.agent_dict
-
-
-def test_remove_agent_does_not_delete_busy_agent(dummy_agent, manager, monkeypatch):
-    # Mock the read_agent and BaseAgent.load functions
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
-
-    agent = manager.load_agent("test_id")
+    test_id = 1
+    agent = manager.load_agent(test_db, test_id)
     agent.busy = True
-    manager._remove_agent("test_id")
-    assert "test_id" in manager.agent_dict
+    manager._remove_agent(test_id)
+    assert test_id in manager.agent_dict
 
 
-def test_cleanup_removes_expired_agents(dummy_agent, manager, monkeypatch):
-    # Mock the read_agent, BaseAgent.load, and time.time functions
+def test_cleanup_removes_expired_agents(test_db, dummy_agent, manager, monkeypatch):
+    mock_timer = Mock()
+    monkeypatch.setattr("perry.agents.manager.Timer", mock_timer)
     monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
     monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
 
-    agent = manager.load_agent("test_id")
+    test_id = 1
+    with freezegun.freeze_time(mock_time()):
+        manager.load_agent(test_db, test_id)
     with freezegun.freeze_time(
         mock_time() + manager._cleanup_timeout + timedelta(seconds=1)
     ):
         manager._cleanup()
-    assert "test_id" not in manager.agent_dict
+        assert test_id not in manager.agent_dict
+        assert mock_timer.call_count == 1
 
 
-def test_cleanup_keeps_unexpired_agents(dummy_agent, manager, monkeypatch):
-    # Mock the read_agent, BaseAgent.load, and time.time functions
+def test_cleanup_keeps_unexpired_agents(test_db, dummy_agent, manager, monkeypatch):
+    mock_timer = Mock()
+    monkeypatch.setattr("perry.agents.manager.Timer", mock_timer)
     monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
     monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
-    monkeypatch.setattr("time.time", lambda: 0)
 
-    agent = manager.load_agent("test_id")
-    monkeypatch.setattr("time.time", lambda: manager._cleanup_timeout - 1)
-    manager._cleanup()
-    assert "test_id" in manager.agent_dict
+    test_id = 1
+    with freezegun.freeze_time(mock_time()):
+        manager.load_agent(test_db, test_id)
+    with freezegun.freeze_time(
+        mock_time() + manager._cleanup_timeout - timedelta(seconds=1)
+    ):
+        manager._cleanup()
+        assert test_id in manager.agent_dict
+        assert mock_timer.call_count == 1

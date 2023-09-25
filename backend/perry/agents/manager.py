@@ -8,23 +8,36 @@ from queue import PriorityQueue
 
 
 class AgentManager:
-    def __init__(self, db_session: Session):
-        """Manage previously created agents in memory."""
-        self.agent_dict = {}
-        self.expiry_queue = PriorityQueue()
-        self.lock = Lock()
-        self._db_session = db_session
-        self._cleanup_timeout = timedelta(minutes=60)
+    """Manage the lifetime of agent instances."""
 
-    def load_agent(self, agent_id):
+    # TODO: Add memory management that scales with user demand. Will use singleton pattern for now
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(AgentManager, cls).__new__(cls)
+            cls.reset()
+        return cls._instance
+
+    @classmethod
+    def reset(cls):
+        cls.agent_dict = {}
+        cls.expiry_queue = PriorityQueue()
+        cls.lock = Lock()
+        cls._cleanup_timeout = timedelta(minutes=60)
+
+    def load_agent(self, db: Session, agent_id):
+        if not isinstance(agent_id, int):
+            raise ValueError("Agent ID must be an integer.")
+
         with self.lock:
             if agent_id in self.agent_dict:
                 return self.agent_dict[agent_id]["agent"]
 
-            if not read_agent(self._db_session, agent_id):
+            if not read_agent(db, agent_id):
                 raise ValueError(f"No agent found with ID {agent_id} in database.")
 
-            agent = BaseAgent.load(self._db_session, agent_id)
+            agent = BaseAgent.load(db, agent_id)
 
             agent.busy = False
 
