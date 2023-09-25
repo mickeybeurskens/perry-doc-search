@@ -170,3 +170,6 @@ stauth
 
 # Treafic files
 letsencrypt/
+
+# SQLite DB
+*.db
