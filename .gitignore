@@ -164,3 +164,6 @@ stauth
 
 # SQL
 *.sqlite
+
+# VS Code
+.vscode/
