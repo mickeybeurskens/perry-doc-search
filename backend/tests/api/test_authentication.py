@@ -69,21 +69,25 @@ def test_decode_access_token_raises_error_if_invalid_token():
 async def test_should_return_user_when_token_is_valid(test_db, mocked_valid_token):
     token, user_id = mocked_valid_token
     with freezegun.freeze_time(get_mocked_date()):
-        result = await get_db_user_from_token(token)
+        result = await get_db_user_from_token(token, test_db)
         assert result.username == get_user(test_db, user_id).username
 
 
 @pytest.mark.asyncio
-async def test_should_raise_http_exception_when_token_is_invalid(mocked_invalid_token):
+async def test_should_raise_http_exception_when_token_is_invalid(
+    test_db, mocked_invalid_token
+):
     with pytest.raises(HTTPException):
-        await get_db_user_from_token(mocked_invalid_token)
+        await get_db_user_from_token(mocked_invalid_token, test_db)
 
 
 @pytest.mark.asyncio
-async def test_should_raise_http_exception_when_token_is_expired(mocked_expired_token):
+async def test_should_raise_http_exception_when_token_is_expired(
+    test_db, mocked_expired_token
+):
     token, _ = mocked_expired_token
     with pytest.raises(HTTPException):
-        await get_db_user_from_token(token)
+        await get_db_user_from_token(token, test_db)
 
 
 @pytest.mark.asyncio
@@ -93,4 +97,4 @@ async def test_should_raise_http_exception_when_user_not_found(
     token, user_id = mocked_valid_token
     delete_user(test_db, user_id)
     with pytest.raises(HTTPException):
-        await get_db_user_from_token(token)
+        await get_db_user_from_token(token, test_db)

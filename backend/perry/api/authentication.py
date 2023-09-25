@@ -10,10 +10,11 @@ from perry.db.operations.users import (
     get_user_by_username,
     User as DBUser,
 )
+from perry.api.dependencies import get_db
 
 
 def get_secret_key():
-    return "secret"
+    return "secret-but-really-not-so-secret"
 
 
 def get_token_algorithm():
@@ -51,14 +52,13 @@ def decode_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
 
 
 async def get_db_user_from_token(
-    token: Annotated[str, Depends(oauth2_scheme)]
+    token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)
 ) -> DBUser:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    db: Session = DatabaseSessionManager.get_db_session
     payload = decode_access_token(token)
     username: str = payload.get("username")
     if username is None:
