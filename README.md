@@ -10,13 +10,13 @@ This repository can be developed and deployed using docker. The docker setup is 
 ### Running Docker
 A local docker setup:
 ```
-docker compose -f development.yml up
+docker compose -f docker/development.yml up
 ```
 
 ### Deploying To Production
 A production docker setup:
 ```
-docker compose -f production.yml up
+docker compose -f docker/production.yml up
 ```
 
 
