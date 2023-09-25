@@ -1,5 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
+from sqlalchemy.orm import Session
 from perry.api.authentication import get_current_user_id
 from perry.api.schemas import APIDocument
 from perry.db.operations.documents import (
@@ -20,9 +21,9 @@ from perry.db.operations.agents import (
     read_agent,
     update_agent,
 )
-from perry.db.session import DatabaseSessionManager as DSM
 from perry.agents.manager import AgentManager
 from perry.agents.base import AgentRegistry
+from perry.api.dependencies import get_db
 
 
 conversation_router = APIRouter()
@@ -68,8 +69,8 @@ def check_owned_conversation(db, conversation_id, user_id) -> DBConversation:
 async def conversation_agent_setup(
     conversation_config: ConversationConfig,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
 ):
-    db = DSM.get_db_session
     docs = get_user_documents(db, db_user_id)
     user_document_ids = [doc.id for doc in docs]
     if not set(conversation_config.doc_ids).issubset(set(user_document_ids)):
@@ -112,9 +113,10 @@ async def conversation_agent_setup(
 
 @conversation_router.get("/{conversation_id}", status_code=status.HTTP_200_OK)
 async def get_conversation_info(
-    conversation_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
+    conversation_id: int,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
 ):
-    db = DSM.get_db_session
     check_owned_conversation(db, conversation_id, db_user_id)
     conversation = read_conversation(db, conversation_id)
     if conversation is None:
@@ -134,9 +136,10 @@ async def get_conversation_info(
 
 @conversation_router.delete("/{conversation_id}", status_code=status.HTTP_200_OK)
 async def remove_conversation_history(
-    conversation_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
+    conversation_id: int,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
 ):
-    db = DSM.get_db_session
     check_owned_conversation(db, conversation_id, db_user_id)
     delete_conversation(db, conversation_id)
 
@@ -146,8 +149,8 @@ async def query_conversation_agent(
     conversation_query: ConversationQuery,
     conversation_id: int,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
 ):
-    db = DSM.get_db_session
     agent_manager = AgentManager()
     check_owned_conversation(db, conversation_id, db_user_id)
 
