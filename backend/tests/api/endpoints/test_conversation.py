@@ -1,8 +1,12 @@
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, AsyncMock
 from fastapi import status
 from perry.api.app import CONVERSATION_URL
-from perry.api.endpoints.conversation import get_current_user_id, ConversationConfig
+from perry.api.endpoints.conversation import (
+    get_current_user_id,
+    ConversationConfig,
+    ConversationQuery,
+)
 from tests.api.fixtures import *
 
 
@@ -28,10 +32,16 @@ def str_path_conv_endpoint() -> str:
 
 
 @pytest.fixture(scope="function")
-def create_conversation_mock(test_client, monkeypatch):
+def conversation_mock(test_client):
     test_client.app.dependency_overrides[
         get_current_user_id
     ] = lambda: get_test_user_id()
+    yield
+    test_client.app.dependency_overrides.pop(get_current_user_id)
+
+
+@pytest.fixture(scope="function")
+def create_conversation_mock(conversation_mock, test_client, monkeypatch):
     monkeypatch.setattr(str_path_conv_endpoint() + ".create_conversation", lambda: True)
     mock_get_user_documents = Mock(
         return_value=[
@@ -75,7 +85,29 @@ def create_conversation_mock(test_client, monkeypatch):
         "mock_update_document": mock_update_document,
     }
 
-    test_client.app.dependency_overrides.pop(get_current_user_id)
+
+@pytest.fixture(scope="function")
+def query_conversation_agent_mock(conversation_mock, test_client, monkeypatch):
+    conversation = Mock(user_id=get_test_user_id())
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: conversation
+    )
+
+    response = "test_response"
+    agent = AsyncMock()
+    agent.query.return_value = response
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".AgentManager.load_agent",
+        lambda self, db, id: agent,
+    )
+    query = ConversationQuery(query="test_query").dict()
+    yield {
+        "test_client": test_client,
+        "conversation": conversation,
+        "agent": agent,
+        "query": query,
+        "response": response,
+    }
 
 
 @pytest.mark.parametrize(
@@ -206,3 +238,79 @@ def test_create_conversation_updates_document_with_conversation_id(
     assert mock_update_document.call_args_list[0][1]["conversation_id"] == [1]
     assert mock_update_document.call_args_list[1][1]["conversation_id"] == [1]
     assert mock_update_document.call_args_list[2][1]["conversation_id"] == [1]
+
+
+def test_query_conversation_agent_errors_on_non_authorized_conversation(
+    query_conversation_agent_mock,
+):
+    test_client = query_conversation_agent_mock["test_client"]
+    conversation = query_conversation_agent_mock["conversation"]
+    conversation.user_id = -1
+
+    response = test_client.post(
+        CONVERSATION_URL + "/1",
+        json=query_conversation_agent_mock["query"],
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {"detail": "Conversation not authorized."}
+
+
+def test_query_conversation_agent_errors_on_invalid_conversation(
+    query_conversation_agent_mock, monkeypatch
+):
+    test_client = query_conversation_agent_mock["test_client"]
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: None
+    )
+
+    response = test_client.post(
+        CONVERSATION_URL + "/1",
+        json=query_conversation_agent_mock["query"],
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Conversation not found."}
+
+
+def test_query_conversation_agent_errors_on_invalid_agent(
+    query_conversation_agent_mock, monkeypatch
+):
+    test_client = query_conversation_agent_mock["test_client"]
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".AgentManager.load_agent", lambda self, db, id: None
+    )
+
+    response = test_client.post(
+        CONVERSATION_URL + "/1",
+        json=query_conversation_agent_mock["query"],
+    )
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"detail": "Could not load agent."}
+
+
+def test_query_conversation_agent_query_failure_raises_server_error(
+    query_conversation_agent_mock,
+):
+    test_client = query_conversation_agent_mock["test_client"]
+    agent = query_conversation_agent_mock["agent"]
+    async_query = AsyncMock(side_effect=Exception("Query failed"))
+    agent.query = async_query
+
+    response = test_client.post(
+        CONVERSATION_URL + "/1",
+        json=query_conversation_agent_mock["query"],
+    )
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json() == {"detail": "Query failed."}
+
+
+def test_query_conversation_agent_succeeds(query_conversation_agent_mock):
+    test_client = query_conversation_agent_mock["test_client"]
+    agent = query_conversation_agent_mock["agent"]
+
+    response = test_client.post(
+        CONVERSATION_URL + "/1",
+        json=query_conversation_agent_mock["query"],
+    )
+    assert response.status_code == status.HTTP_200_OK
+    agent.called_once_with(query_conversation_agent_mock["query"]["query"])
+    assert response.json() == query_conversation_agent_mock["response"]

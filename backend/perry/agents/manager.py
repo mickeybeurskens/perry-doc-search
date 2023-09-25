@@ -26,6 +26,7 @@ class AgentManager:
         cls.lock = Lock()
         cls._cleanup_timeout = timedelta(minutes=60)
 
+    @classmethod
     def load_agent(self, db: Session, agent_id):
         if not isinstance(agent_id, int):
             raise ValueError("Agent ID must be an integer.")

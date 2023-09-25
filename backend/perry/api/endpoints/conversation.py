@@ -37,6 +37,10 @@ class ConversationConfig(BaseModel):
     doc_ids: list[int]
 
 
+class ConversationQuery(BaseModel):
+    query: str
+
+
 @conversation_router.post("/", status_code=status.HTTP_201_CREATED)
 async def conversation_agent_setup(
     conversation_config: ConversationConfig,
@@ -99,8 +103,40 @@ async def remove_conversation_history(
 
 @conversation_router.post("/{conversation_id}", status_code=status.HTTP_200_OK)
 async def query_conversation_agent(
+    conversation_query: ConversationQuery,
     conversation_id: int,
-    query: str,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    pass
+    db = DSM.get_db_session
+    agent_manager = AgentManager()
+    conversation = read_conversation(db, conversation_id)
+    if conversation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Conversation not found.",
+        )
+    if conversation.user_id != db_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Conversation not authorized.",
+        )
+
+    agent_not_found_exception = HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Could not load agent.",
+    )
+    try:
+        agent = agent_manager.load_agent(db, conversation_id)
+        if not agent:
+            raise agent_not_found_exception
+    except Exception:
+        raise agent_not_found_exception
+
+    try:
+        answer = await agent.query(conversation_query.query)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Query failed.",
+        )
+    return answer
