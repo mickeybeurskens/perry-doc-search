@@ -41,6 +41,15 @@ def conversation_mock(test_client):
 
 
 @pytest.fixture(scope="function")
+def check_owned_mock(monkeypatch):
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".check_owned_conversation",
+        lambda db, conv_id, user_id: True,
+    )
+    yield
+
+
+@pytest.fixture(scope="function")
 def create_conversation_mock(conversation_mock, test_client, monkeypatch):
     monkeypatch.setattr(str_path_conv_endpoint() + ".create_conversation", lambda: True)
     mock_get_user_documents = Mock(
@@ -314,3 +323,44 @@ def test_query_conversation_agent_succeeds(query_conversation_agent_mock):
     assert response.status_code == status.HTTP_200_OK
     agent.called_once_with(query_conversation_agent_mock["query"]["query"])
     assert response.json() == query_conversation_agent_mock["response"]
+
+
+def test_get_conversation_info_errors_on_non_authorized_conversation(
+    conversation_mock, check_owned_mock, test_client, monkeypatch
+):
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: None
+    )
+
+    response = test_client.get(CONVERSATION_URL + "/1")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Conversation not found."}
+
+
+def test_get_conversation_info_succeeds(
+    conversation_mock, check_owned_mock, test_client, monkeypatch
+):
+    moc_conversation = Mock(
+        id=1,
+        user_id=1,
+        agent=Mock(config={}),
+        documents=[
+            Mock(id=1, title=""),
+            Mock(id=2, title=""),
+            Mock(id=3, title=""),
+        ],
+    )
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: moc_conversation
+    )
+
+    response = test_client.get(CONVERSATION_URL + "/1")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "id": 1,
+        "user_id": 1,
+        "agent_settings": {},
+        "doc_ids": [1, 2, 3],
+        "doc_titles": ["", "", ""],
+    }

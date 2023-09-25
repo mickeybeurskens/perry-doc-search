@@ -12,6 +12,7 @@ from perry.db.operations.conversations import (
     delete_conversation,
     read_conversation,
     update_conversation,
+    Conversation as DBConversation,
 )
 from perry.db.operations.agents import (
     create_agent,
@@ -39,6 +40,28 @@ class ConversationConfig(BaseModel):
 
 class ConversationQuery(BaseModel):
     query: str
+
+
+class ConversationInfo(BaseModel):
+    id: int
+    user_id: int
+    agent_settings: dict
+    doc_ids: list[int]
+    doc_titles: list[str]
+
+
+def check_owned_conversation(db, conversation_id, user_id) -> DBConversation:
+    conversation = read_conversation(db, conversation_id)
+    if conversation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Conversation not found.",
+        )
+    if conversation.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Conversation not authorized.",
+        )
 
 
 @conversation_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -91,14 +114,31 @@ async def conversation_agent_setup(
 async def get_conversation_info(
     conversation_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
-    pass
+    db = DSM.get_db_session
+    check_owned_conversation(db, conversation_id, db_user_id)
+    conversation = read_conversation(db, conversation_id)
+    if conversation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Conversation not found.",
+        )
+    conversation_info = ConversationInfo(
+        id=conversation.id,
+        user_id=conversation.user_id,
+        agent_settings=conversation.agent.config,
+        doc_ids=[doc.id for doc in conversation.documents],
+        doc_titles=[doc.title for doc in conversation.documents],
+    )
+    return conversation_info
 
 
 @conversation_router.delete("/{conversation_id}", status_code=status.HTTP_200_OK)
 async def remove_conversation_history(
     conversation_id: int, db_user_id: Annotated[int, Depends(get_current_user_id)]
 ):
-    pass
+    db = DSM.get_db_session
+    check_owned_conversation(db, conversation_id, db_user_id)
+    delete_conversation(db, conversation_id)
 
 
 @conversation_router.post("/{conversation_id}", status_code=status.HTTP_200_OK)
@@ -109,17 +149,7 @@ async def query_conversation_agent(
 ):
     db = DSM.get_db_session
     agent_manager = AgentManager()
-    conversation = read_conversation(db, conversation_id)
-    if conversation is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Conversation not found.",
-        )
-    if conversation.user_id != db_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Conversation not authorized.",
-        )
+    check_owned_conversation(db, conversation_id, db_user_id)
 
     agent_not_found_exception = HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
