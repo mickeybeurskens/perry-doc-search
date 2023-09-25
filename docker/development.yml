@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: ../backend
-      dockerfile: ../docker/development/Dockerfile
+      dockerfile: ../backend/docker/development/Dockerfile
     container_name: backend-dev
     image: "backend-dev"
     working_dir: /app
@@ -20,7 +20,7 @@ services:
       - backend
     build:
       context: ../frontend
-      dockerfile: ../docker/development/Dockerfile
+      dockerfile: ../frontend/docker/development/Dockerfile
     container_name: frontend-dev
     image: "frontend-dev"
     working_dir: /app

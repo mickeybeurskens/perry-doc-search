@@ -167,3 +167,6 @@ stauth
 
 # VS Code
 .vscode/
+
+# Treafic files
+letsencrypt/

@@ -12,9 +12,9 @@ services:
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.perryresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.perryresolver.acme.email=mickey@forgefire.dev"
-      - "--certificatesresolvers.perryresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.frontendresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.frontendresolver.acme.email=mickey@forgefire.dev"
+      - "--certificatesresolvers.frontendresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       # The HTTP port
       - "443:443"
@@ -24,23 +24,39 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
       # Certificates
-      - "./letsencrypt:/letsencrypt"
+      - "../letsencrypt:/letsencrypt"
 
-  perry:
+  backend:
     build:
-      context: .
-      dockerfile: ./compose/streamlit/production/Dockerfile
-
-    image: "streamlit_app"
+      context: ../backend
+      dockerfile: ../backend/docker/production/Dockerfile
+    container_name: backend-prod
+    image: "backend-prod"
     working_dir: /app
     environment:
       - PERRY_DEPLOYMENT_MODE=production
     volumes:
-      - ./:/app
+      - ../backend:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../frontend/docker/production/Dockerfile
+    container_name: frontend-prod
+    image: "frontend-prod"
+    working_dir: /app
+    environment:
+      - PERRY_DEPLOYMENT_MODE=production
+    volumes:
+      - ../frontend:/app
     ports:
       - "8501:8501"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.perry.rule=Host(`perry.forgefire.dev`)"
-      - "traefik.http.routers.perry.entrypoints=websecure"
-      - "traefik.http.routers.perry.tls.certresolver=perryresolver"
+      - "traefik.http.routers.frontend.rule=Host(`perry.forgefire.dev`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=frontendresolver"
+
+
