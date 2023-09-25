@@ -27,8 +27,4 @@ class DatabaseSessionManager:
         if cls._SessionLocal is None:
             cls.get_session_local()
 
-        db = cls._SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
+        return cls._SessionLocal()

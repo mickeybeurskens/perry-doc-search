@@ -27,10 +27,12 @@ def mock_get_secret_key(monkeypatch):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def test_db(create_test_db) -> Session:
+def test_db(create_test_db, monkeypatch) -> Session:
     """Empty database before each test and return."""
     clear_db(create_test_db)
-
+    monkeypatch.setattr(
+        "perry.db.session.DatabaseSessionManager._SessionLocal", lambda: create_test_db
+    )
     return create_test_db
 
 

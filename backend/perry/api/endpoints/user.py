@@ -1,5 +1,6 @@
 from typing import Annotated
 from datetime import timedelta
+from sqlalchemy.orm import Session
 from fastapi import HTTPException, APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from perry.db.operations.users import (
@@ -8,7 +9,7 @@ from perry.db.operations.users import (
     get_user_by_username,
     authenticate_user,
 )
-from perry.db.session import DatabaseSessionManager
+from perry.api.dependencies import get_db
 from perry.api.schemas import APIUser, UserRegister, Token
 from perry.api.authentication import create_access_token, get_current_user
 
@@ -17,8 +18,7 @@ user_router = APIRouter()
 
 
 @user_router.post("/register")
-async def register(user: UserRegister):
-    db = DatabaseSessionManager.get_db_session
+async def register(user: UserRegister, db: Session = Depends(get_db)):
     db_user = get_user_by_username(db, user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -28,9 +28,9 @@ async def register(user: UserRegister):
 
 @user_router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db),
 ):
-    db = DatabaseSessionManager.get_db_session
     user_id = authenticate_user(db, form_data.username, form_data.password)
     if not user_id:
         raise HTTPException(

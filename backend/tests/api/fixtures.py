@@ -6,11 +6,16 @@ from datetime import datetime, timedelta
 from perry.db.operations.users import get_user
 from tests.conftest import get_mock_secret_key
 from perry.api.app import app
+from perry.api.dependencies import get_db
 
 
 @pytest.fixture(scope="function")
-def test_client():
+def test_client(test_db):
+    def get_mock_db():
+        yield test_db
+
     with TestClient(app) as client:
+        client.app.dependency_overrides[get_db] = get_mock_db
         yield client
 
 
