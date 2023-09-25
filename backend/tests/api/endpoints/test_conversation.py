@@ -6,6 +6,7 @@ from perry.api.endpoints.conversation import (
     get_current_user_id,
     ConversationConfig,
     ConversationQuery,
+    check_owned_conversation,
 )
 from tests.api.fixtures import *
 
@@ -364,3 +365,41 @@ def test_get_conversation_info_succeeds(
         "doc_ids": [1, 2, 3],
         "doc_titles": ["", "", ""],
     }
+
+
+def test_remove_conversation_history_calls_delete_conversation(
+    conversation_mock, check_owned_mock, test_client, monkeypatch
+):
+    mock_delete_conversation = Mock(return_value=True)
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".delete_conversation", mock_delete_conversation
+    )
+
+    response = test_client.delete(CONVERSATION_URL + "/1")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert mock_delete_conversation.call_count == 1
+    assert mock_delete_conversation.call_args_list[0][0][1] == 1
+
+
+def test_check_owned_conversation_errors_on_not_found_conversation(monkeypatch):
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: None
+    )
+    with pytest.raises(Exception) as e:
+        check_owned_conversation(Mock(), 1, 1)
+
+
+def test_check_owned_conversation_errors_on_not_authorized(monkeypatch):
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: Mock(user_id=2)
+    )
+    with pytest.raises(Exception) as e:
+        check_owned_conversation(Mock(), 1, 1)
+
+
+def test_check_owned_conversation_succeeds(monkeypatch):
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".read_conversation", lambda db, id: Mock(user_id=1)
+    )
+    check_owned_conversation(Mock(), 1, 1)
