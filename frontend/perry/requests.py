@@ -13,7 +13,7 @@ class RequestManager:
 
     def login(self, username, password):
         response = requests.post(
-            f"{self.base_url}/users/token",
+            f"{self.base_url}/users/token/",
             data={"username": username, "password": password},
         )
         return response
@@ -26,7 +26,33 @@ class RequestManager:
 
     def get_conversations(self, token):
         response = requests.get(
-            f"{self.base_url}/conversations", headers=self._get_auth_header(token)
+            f"{self.base_url}/conversations/", headers=self._get_auth_header(token)
+        )
+        return response
+    
+    def get_document_list(self, token):
+        response = requests.get(
+            f"{self.base_url}/documents/info/", headers=self._get_auth_header(token)
+        )
+        return response
+    
+    def upload_document(self, token, document):
+        response = requests.post(
+            f"{self.base_url}/documents/file/", headers=self._get_auth_header(token), 
+            files={"file": (document.name, document.read(), "application/pdf")}
+        )
+        return response
+    
+    def update_document(self, token, document_id, description):
+        response = requests.put(
+            f"{self.base_url}/documents/info/{document_id}", headers=self._get_auth_header(token),
+            json={"description": description}
+        )
+        return response
+    
+    def delete_document(self, token, document_id):
+        response = requests.delete(
+            f"{self.base_url}/documents/file/{document_id}", headers=self._get_auth_header(token)
         )
         return response
 

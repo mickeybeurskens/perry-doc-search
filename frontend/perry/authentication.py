@@ -44,18 +44,20 @@ def display_user_info(request_manager: RequestManager):
         st.sidebar.write(f"Welcome back **{user_info['username']}**!")
 
 
-def handle_login(user_manager):
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
-    if st.sidebar.button("Login"):
-        response = user_manager.login(username, password)
+def handle_login(request_manager):
+    st.header("Welcome to Perry!")
+    st.write("Please login to continue.")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        response = request_manager.login(username, password)
         if response.status_code == 200:
             st.session_state["authentication_status"] = True
             st.session_state["jwt_token"] = response.json()["access_token"]
             st.rerun()  # Force rerun to update the sidebar
         else:
             st.session_state["authentication_status"] = False
-            st.sidebar.write("Login failed.")
+            st.write("Login failed.")
 
 
 def handle_logout(request_manager):
