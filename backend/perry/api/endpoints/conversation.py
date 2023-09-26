@@ -21,6 +21,7 @@ from perry.db.operations.agents import (
     read_agent,
     update_agent,
 )
+from perry.db.operations.users import get_user
 from perry.agents.manager import AgentManager
 from perry.agents.base import AgentRegistry
 from perry.api.dependencies import get_db
@@ -63,6 +64,27 @@ def check_owned_conversation(db, conversation_id, user_id) -> DBConversation:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Conversation not authorized.",
         )
+
+
+def conversation_db_to_info(db_conversation: DBConversation) -> ConversationInfo:
+    return ConversationInfo(
+        id=db_conversation.id,
+        user_id=db_conversation.user_id,
+        agent_settings=db_conversation.agent.config,
+        doc_ids=[doc.id for doc in db_conversation.documents],
+        doc_titles=[doc.title for doc in db_conversation.documents],
+    )
+
+
+@conversation_router.get(
+    "/", status_code=status.HTTP_200_OK, response_model=list[ConversationInfo]
+)
+async def get_user_conversations(
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    conversations = get_user(db, db_user_id).conversations
+    return [conversation_db_to_info(conv) for conv in conversations]
 
 
 @conversation_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -124,14 +146,7 @@ async def get_conversation_info(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Conversation not found.",
         )
-    conversation_info = ConversationInfo(
-        id=conversation.id,
-        user_id=conversation.user_id,
-        agent_settings=conversation.agent.config,
-        doc_ids=[doc.id for doc in conversation.documents],
-        doc_titles=[doc.title for doc in conversation.documents],
-    )
-    return conversation_info
+    return conversation_db_to_info(conversation)
 
 
 @conversation_router.delete("/{conversation_id}", status_code=status.HTTP_200_OK)

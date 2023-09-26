@@ -32,6 +32,19 @@ def str_path_conv_endpoint() -> str:
     return "perry.api.endpoints.conversation"
 
 
+def get_mock_conversation(id=1, user_id=1):
+    return Mock(
+        id=id,
+        user_id=user_id,
+        agent=Mock(config={}),
+        documents=[
+            Mock(id=1, title=""),
+            Mock(id=2, title=""),
+            Mock(id=3, title=""),
+        ],
+    )
+
+
 @pytest.fixture(scope="function")
 def conversation_mock(test_client):
     test_client.app.dependency_overrides[
@@ -48,6 +61,21 @@ def check_owned_mock(monkeypatch):
         lambda db, conv_id, user_id: True,
     )
     yield
+
+
+@pytest.fixture(scope="function")
+def get_user_conversation_mock(conversation_mock, test_client, monkeypatch):
+    conversations = [
+        get_mock_conversation(1, 1),
+        get_mock_conversation(2, 2),
+        get_mock_conversation(3, 3),
+    ]
+    user = Mock(conversations=conversations)
+    monkeypatch.setattr(str_path_conv_endpoint() + ".get_user", lambda db, id: user)
+    yield {
+        "test_client": test_client,
+        "conversations": conversations,
+    }
 
 
 @pytest.fixture(scope="function")
@@ -123,6 +151,7 @@ def query_conversation_agent_mock(conversation_mock, test_client, monkeypatch):
 @pytest.mark.parametrize(
     "endpoint, method, status_code",
     [
+        (CONVERSATION_URL + "/", "GET", status.HTTP_401_UNAUTHORIZED),
         (CONVERSATION_URL + "/", "POST", status.HTTP_401_UNAUTHORIZED),
         (CONVERSATION_URL + "/1", "POST", status.HTTP_401_UNAUTHORIZED),
         (CONVERSATION_URL + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
@@ -134,6 +163,34 @@ def test_endpoints_should_refuse_non_authenticated_users(
 ):
     response = test_client.request(method, endpoint)
     assert response.status_code == status_code
+
+
+def test_get_user_conversations_returns_empty_list_if_no_conversations(
+    get_user_conversation_mock, test_client, monkeypatch
+):
+    conversations = []
+    user = Mock(conversations=conversations)
+    monkeypatch.setattr(str_path_conv_endpoint() + ".get_user", lambda db, id: user)
+    response = test_client.get(CONVERSATION_URL + "/")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
+
+
+def test_get_user_conversations_returns_list_of_conversations(
+    get_user_conversation_mock, test_client
+):
+    conversations = get_user_conversation_mock["conversations"]
+    conversation_info_check = lambda conv: {
+        "id": conv.id,
+        "user_id": conv.user_id,
+        "agent_settings": conv.agent.config,
+        "doc_ids": [doc.id for doc in conv.documents],
+        "doc_titles": [doc.title for doc in conv.documents],
+    }
+    return_json = [conversation_info_check(conv) for conv in conversations]
+    response = test_client.get(CONVERSATION_URL + "/")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == return_json
 
 
 def test_create_conversation_errors_with_unowned_doc_ids(create_conversation_mock):
@@ -341,16 +398,7 @@ def test_get_conversation_info_errors_on_non_authorized_conversation(
 def test_get_conversation_info_succeeds(
     conversation_mock, check_owned_mock, test_client, monkeypatch
 ):
-    moc_conversation = Mock(
-        id=1,
-        user_id=1,
-        agent=Mock(config={}),
-        documents=[
-            Mock(id=1, title=""),
-            Mock(id=2, title=""),
-            Mock(id=3, title=""),
-        ],
-    )
+    moc_conversation = get_mock_conversation()
     monkeypatch.setattr(
         str_path_conv_endpoint() + ".read_conversation", lambda db, id: moc_conversation
     )
