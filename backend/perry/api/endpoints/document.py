@@ -12,11 +12,38 @@ from perry.db.operations.documents import (
     document_owned_by_user,
     get_user_documents,
 )
+from perry.db.operations.users import get_user, User as DBUser
 from perry.api.dependencies import get_db
 
 
 file_router = APIRouter()
 document_router = APIRouter()
+
+
+def check_file_type(file_type: str):
+    if not file_type == "application/pdf":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a PDF",
+        )
+
+
+def check_file_size(file_size: int):
+    file_size_limit = 10e6
+    if file_size > file_size_limit:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File must be smaller than {file_size_limit/1e6}MB",
+        )
+
+
+def check_max_documents(user: DBUser):
+    doc_limit = 20
+    if len(user.documents) > doc_limit:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User cannot have more than {doc_limit} documents",
+        )
 
 
 @file_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -25,11 +52,10 @@ async def upload_file(
     db_user_id: Annotated[int, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
 ):
-    if not file.content_type == "application/pdf":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be a PDF",
-        )
+    check_file_type(file.content_type)
+    check_file_size(file.size)
+    check_max_documents(get_user(db, db_user_id))
+
     try:
         doc_id = save_file(db, file.file, "pdf")
     except Exception as e:

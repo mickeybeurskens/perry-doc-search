@@ -60,6 +60,9 @@ def mock_create_doc_db_operations(monkeypatch, test_client, mock_get_user_id):
         "perry.api.endpoints.document.update_document", mock_update_document
     )
     monkeypatch.setattr("perry.api.endpoints.document.remove_file", mock_remove_file)
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.check_max_documents", lambda *args, **kwargs: None
+    )
     user_id = mock_get_user_id
     file_content = b"Some PDF content"
 
@@ -196,6 +199,9 @@ def test_upload_file_should_call_save_file_with_binaryio_object(
     )
     monkeypatch.setattr(
         "perry.api.endpoints.document.update_document", lambda *args, **kwargs: True
+    )
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.check_max_documents", lambda *args, **kwargs: None
     )
 
     response = test_client.post(
@@ -339,3 +345,50 @@ def test_get_all_doc_info_returns_all_user_documents(
 ):
     response = test_client.get(get_document_url() + "/")
     assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize(
+    "file_size, raise_http_error",
+    [
+        (10000000, False),
+        (10000001, True),
+    ],
+)
+def test_check_file_size(file_size, raise_http_error):
+    if raise_http_error:
+        with pytest.raises(HTTPException):
+            check_file_size(file_size)
+    else:
+        check_file_size(file_size)
+
+
+@pytest.mark.parametrize(
+    "file_type, raise_http_error",
+    [
+        ("application/pdf", False),
+        ("application/txt", True),
+    ],
+)
+def test_check_file_type(file_type, raise_http_error):
+    if raise_http_error:
+        with pytest.raises(HTTPException):
+            check_file_type(file_type)
+    else:
+        check_file_type(file_type)
+
+
+@pytest.mark.parametrize(
+    "doc_amount, raise_http_error",
+    [
+        (20, False),
+        (21, True),
+    ],
+)
+def test_check_max_documents(doc_amount, raise_http_error):
+    user = Mock()
+    user.documents = range(doc_amount)
+    if raise_http_error:
+        with pytest.raises(HTTPException):
+            check_max_documents(user)
+    else:
+        check_max_documents(user)

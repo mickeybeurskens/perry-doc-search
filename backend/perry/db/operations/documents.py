@@ -14,8 +14,8 @@ def save_file(db_session: Session, bytes_obj: io.BytesIO, suffix: str) -> int:
     db_session.add(new_doc)
     db_session.flush()  # Generates the ID without committing the transaction
 
+    file_path = pathlib.Path(get_file_storage_path(), f"{new_doc.id}.{suffix}")
     try:
-        file_path = pathlib.Path(get_file_storage_path(), f"{new_doc.id}.{suffix}")
         new_doc.file_path = str(file_path)
         save_bytes_to_file(bytes_obj, file_path)
 
@@ -95,8 +95,12 @@ def load_bytes_from_file(file_path: pathlib.Path) -> io.BytesIO:
     return bytes_obj
 
 
-def get_file_storage_path(document_path: pathlib.Path):
-    return pathlib.Path(document_path.parent / "storage" / "files")
+def get_file_storage_path():
+    root_dir = pathlib.Path(__file__).parent.parent.parent.parent
+    path = pathlib.Path(root_dir / "storage" / "files")
+    if not path.exists():
+        path.mkdir(parents=True)
+    return path
 
 
 def create_document(db: Session) -> int:

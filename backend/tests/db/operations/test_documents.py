@@ -259,3 +259,9 @@ def test_get_user_documents_returns_all_documents(
     docs = get_user_documents(test_db, user_id)
     assert len(docs) == 2
     assert set(d.id for d in docs) == set(doc_ids)
+
+
+def test_get_file_storage_path_returns_correct_path():
+    file_storage_path = get_file_storage_path()
+    default_path = Path(__file__).parent.parent.parent.parent / "storage" / "files"
+    assert file_storage_path == default_path
