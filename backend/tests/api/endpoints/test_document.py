@@ -1,3 +1,5 @@
+from io import BytesIO
+from pathlib import Path
 from unittest.mock import Mock
 from perry.api.endpoints.document import *
 from tests.conftest import get_mock_secret_key
@@ -181,6 +183,29 @@ def test_create_doc_update_error_should_remove_file(
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert save_file.call_count == 1
     assert remove_file.call_count == 1
+
+
+def test_upload_file_should_call_save_file_with_binaryio_object(
+    test_client, monkeypatch, tmpdir, mock_get_user_id
+):
+    file_name = "filename.pdf"
+
+    monkeypatch.setattr(
+        "perry.db.operations.documents.get_file_storage_path",
+        lambda *args, **kwargs: tmpdir,
+    )
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.update_document", lambda *args, **kwargs: True
+    )
+
+    response = test_client.post(
+        get_file_url() + "/",
+        files={"file": (file_name, b"test_bin", "application/pdf")},
+    )
+
+    created_file_path = Path(tmpdir, "1.pdf")
+    assert response.status_code == status.HTTP_201_CREATED
+    assert created_file_path.exists()
 
 
 @pytest.mark.parametrize(

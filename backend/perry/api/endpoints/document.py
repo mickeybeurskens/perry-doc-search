@@ -31,7 +31,7 @@ async def upload_file(
             detail="File must be a PDF",
         )
     try:
-        doc_id = save_file(db, file, ".pdf")
+        doc_id = save_file(db, file.file, "pdf")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

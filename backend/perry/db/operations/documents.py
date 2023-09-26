@@ -85,7 +85,7 @@ def move_file(db_session: Session, document_id: int, new_file_path: str):
 def save_bytes_to_file(bytes_obj: io.BytesIO, file_path: pathlib.Path):
     """Convert bytes object to file on the filesystem."""
     with open(file_path, "wb") as f:
-        f.write(bytes_obj.getbuffer())
+        f.write(bytes_obj.read())
 
 
 def load_bytes_from_file(file_path: pathlib.Path) -> io.BytesIO:
@@ -141,24 +141,21 @@ def update_document(
         return None
     if title is not None:
         db_document.title = title
-        doc_id_updated = document_id
     if file_path is not None:
         db_document.file_path = file_path
-        doc_id_updated = document_id
     if description is not None:
         db_document.description = description
-        doc_id_updated = document_id
     if conversation_ids is not None:
         convs = []
         for conversation_id in conversation_ids:
             convs.append(read_conversation(db, conversation_id))
         db_document.conversations = convs
-        doc_id_updated = document_id
     if user_ids is not None:
         users = []
         for user_id in user_ids:
             users.append(get_user(db, user_id))
         db_document.users = users
+    if title or file_path or description or conversation_ids or user_ids:
         doc_id_updated = document_id
     db.commit()
     return doc_id_updated

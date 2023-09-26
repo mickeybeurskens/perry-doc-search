@@ -4,6 +4,8 @@ import io
 from unittest.mock import Mock, patch
 from perry.db.operations.documents import *
 from perry.db.operations.users import get_user
+from unittest.mock import patch, Mock
+from fastapi import UploadFile
 
 
 @pytest.fixture
@@ -57,11 +59,21 @@ def test_save_file_success(mock_bytes_obj, mock_file_path, test_db, tmpdir):
         assert Path(doc.file_path).exists()
 
 
-from unittest.mock import patch, Mock
+def test_save_file_success_with_uploadfile(
+    mock_bytes_obj, mock_file_path, test_db, tmpdir
+):
+    with patch(
+        "perry.db.operations.documents.get_file_storage_path", return_value=str(tmpdir)
+    ):
+        upload_file = UploadFile(file=mock_bytes_obj, filename="test.txt")
+        bytes_object = upload_file.file
+        doc_id = save_file(db_session=test_db, bytes_obj=bytes_object, suffix="txt")
+        doc = test_db.query(Document).filter(Document.id == doc_id).first()
+        assert doc.file_path == str(mock_file_path)
+        assert Path(doc.file_path).exists()
 
 
 def test_remove_file_success(test_db, mocked_document):
-    # Setup: Mock the database object and file path
     with patch(
         "perry.db.operations.documents.get_document"
     ) as mock_get_document, patch(
@@ -79,7 +91,6 @@ def test_remove_file_success(test_db, mocked_document):
 
 
 def test_load_file_success(test_db, mocked_document):
-    # Setup: Mock the database object and file path
     with patch("perry.db.operations.documents.get_document") as mock_get_document:
         mock_get_document.return_value = mocked_document
 
