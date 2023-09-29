@@ -8,22 +8,30 @@ def upload_document(request_manager):
     st.title("Upload Document")
     document = st.file_uploader("Upload your PDF files here.")
     description = st.text_input("Enter a description for the document.")
+    if description == "" or description == " ":
+        description = None
     if document:
-        st.write("Filename:", document)
+        st.write("_File Info_:")
+        st.info(document)
         if document.type != "application/pdf":
             st.write("Please upload a PDF file.")
             return
         if document.size > 10000000:
             st.write("Please upload a file smaller than 10MB.")
             return
-        if st.button("Upload"):
+        button_press = st.button("Upload")
+        if button_press and not description:
+            st.error("Could not upload file. Please enter a description.")
+            return
+        elif button_press:
           document_response = request_manager.upload_document(
               st.session_state["jwt_token"], document
           )
+          doc_id = document_response.json()["id"]
           update_response = request_manager.update_document(
-                st.session_state["jwt_token"], document_response.json()["id"], description
+                st.session_state["jwt_token"], doc_id, document.name, description
             )
-          if document_response.status_code == 200 and update_response.status_code == 200:
+          if document_response.status_code == 201 and update_response.status_code == 200:
               st.write("Successfully uploaded document.")
           else:
               st.write("Failed to upload document.")
@@ -42,7 +50,7 @@ def list_documents_to_delete(request_manager):
             col_1, col_2 = st.columns([1, 16])
             checkboxes[idx] = col_1.checkbox("", key=idx)
             col_2.write("__Name:__ " +doc["title"])
-            st.code("Description: " +doc["description"])
+            st.info("Description: " +doc["description"])
             st.divider()
         if st.button("Delete selected"):
             for idx, doc in enumerate(documents):

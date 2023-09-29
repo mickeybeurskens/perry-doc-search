@@ -1,5 +1,6 @@
 import requests
 
+
 class RequestManager:
     def __init__(self, base_url):
         self.base_url = base_url
@@ -29,30 +30,33 @@ class RequestManager:
             f"{self.base_url}/conversations/", headers=self._get_auth_header(token)
         )
         return response
-    
+
     def get_document_list(self, token):
         response = requests.get(
             f"{self.base_url}/documents/info/", headers=self._get_auth_header(token)
         )
         return response
-    
+
     def upload_document(self, token, document):
         response = requests.post(
-            f"{self.base_url}/documents/file/", headers=self._get_auth_header(token), 
-            files={"file": (document.name, document.read(), "application/pdf")}
+            f"{self.base_url}/documents/file/",
+            headers=self._get_auth_header(token),
+            files={"file": (document.name, document.read(), "application/pdf")},
         )
         return response
-    
-    def update_document(self, token, document_id, description):
+
+    def update_document(self, token, document_id, title, description):
         response = requests.put(
-            f"{self.base_url}/documents/info/{document_id}", headers=self._get_auth_header(token),
-            json={"description": description}
+            f"{self.base_url}/documents/info/{document_id}",
+            headers=self._get_auth_header(token),
+            json={"description": description, "title": title, "id": document_id},
         )
         return response
-    
+
     def delete_document(self, token, document_id):
         response = requests.delete(
-            f"{self.base_url}/documents/file/{document_id}", headers=self._get_auth_header(token)
+            f"{self.base_url}/documents/file/{document_id}",
+            headers=self._get_auth_header(token),
         )
         return response
 

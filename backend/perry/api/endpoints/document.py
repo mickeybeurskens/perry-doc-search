@@ -121,6 +121,20 @@ async def retrieve_file_binary(
     return UploadFile(file=file_bytes, filename=db_doc.title)
 
 
+@document_router.get("/", response_model=list[APIDocument])
+async def get_all_docs(
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    db_documents = get_user_documents(db, db_user_id)
+    docs = []
+    for doc in db_documents:
+        docs.append(
+            APIDocument(title=doc.title, id=doc.id, description=doc.description)
+        )
+    return docs
+
+
 @document_router.get("/{document_id}", response_model=APIDocument)
 async def get_doc_by_id(
     document_id: int,
@@ -141,13 +155,22 @@ async def get_doc_by_id(
     return APIDocument(title=doc.title, id=doc.id)
 
 
-@document_router.get("/", response_model=list[APIDocument])
-async def get_all_docs(
+@document_router.put("/{document_id}", status_code=status.HTTP_200_OK)
+async def update_doc_description(
+    document_id: int,
+    info: APIDocument,
     db_user_id: Annotated[int, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
 ):
-    db_documents = get_user_documents(db, db_user_id)
-    docs = []
-    for doc in db_documents:
-        docs.append(APIDocument(title=doc.title, id=doc.id))
-    return docs
+    if not document_owned_by_user(db, document_id, db_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update document",
+        )
+    try:
+        update_document(db, document_id, description=info.description)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not update document",
+        )

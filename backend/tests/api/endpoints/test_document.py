@@ -17,7 +17,7 @@ def get_file_url():
 
 
 def mock_api_doc(*args, **kwargs):
-    return APIDocument(title="Test Document", id=1)
+    return APIDocument(title="Test Document", id=1, description="test")
 
 
 @pytest.fixture(scope="function")
@@ -96,6 +96,7 @@ def mock_retrieve_binary_file_setup(monkeypatch, mock_get_user_id):
         (get_file_url() + "/1", "DELETE", status.HTTP_401_UNAUTHORIZED),
         (get_document_url() + "/", "GET", status.HTTP_401_UNAUTHORIZED),
         (get_document_url() + "/1", "GET", status.HTTP_401_UNAUTHORIZED),
+        (get_document_url() + "/1", "PUT", status.HTTP_401_UNAUTHORIZED),
     ],
 )
 def test_endpoints_should_refuse_non_authenticated_users_available(
@@ -344,6 +345,26 @@ def test_get_all_doc_info_returns_all_user_documents(
     test_client, mock_get_user_documents, mock_get_user_id
 ):
     response = test_client.get(get_document_url() + "/")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [mock_api_doc().dict()]
+
+
+def test_update_doc_description_should_return_200(
+    test_client, mock_get_user_id, monkeypatch
+):
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.document_owned_by_user",
+        lambda *args, **kwargs: True,
+    )
+    monkeypatch.setattr(
+        "perry.api.endpoints.document.update_document",
+        lambda *args, **kwargs: True,
+    )
+    doc_id = 1
+    response = test_client.put(
+        get_document_url() + "/" + str(doc_id),
+        json=APIDocument(title="Test Document", id=doc_id, description="test").dict(),
+    )
     assert response.status_code == status.HTTP_200_OK
 
 
