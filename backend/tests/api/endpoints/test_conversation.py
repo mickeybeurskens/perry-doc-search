@@ -33,7 +33,7 @@ def str_path_conv_endpoint() -> str:
 
 
 def get_mock_conversation(id=1, user_id=1):
-    return Mock(
+    conv = Mock(
         id=id,
         user_id=user_id,
         agent=Mock(config={}),
@@ -43,6 +43,8 @@ def get_mock_conversation(id=1, user_id=1):
             Mock(id=3, title=""),
         ],
     )
+    conv.name = "test_name"  # Set this way to avoid naming conflicts with Mock
+    return conv
 
 
 @pytest.fixture(scope="function")
@@ -184,6 +186,7 @@ def test_get_user_conversations_returns_list_of_conversations(
         "agent_settings": conv.agent.config,
         "doc_ids": [doc.id for doc in conv.documents],
         "doc_titles": [doc.title for doc in conv.documents],
+        "name": conv.name,
     }
     return_json = [conversation_info_check(conv) for conv in conversations]
     response = test_client.get(CONVERSATION_URL + "/")
@@ -410,6 +413,7 @@ def test_get_conversation_info_succeeds(
         "agent_settings": {},
         "doc_ids": [1, 2, 3],
         "doc_titles": ["", "", ""],
+        "name": "test_name",
     }
 
 

@@ -109,6 +109,7 @@ class Conversation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     start_time = Column(DateTime, default=datetime.now)
+    name = Column(String, default="")
 
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="conversations")

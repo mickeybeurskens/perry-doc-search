@@ -13,12 +13,14 @@ def read_conversation(session: Session, conversation_id):
     return session.query(Conversation).filter_by(id=conversation_id).first()
 
 
-def update_conversation(session: Session, conversation_id, user_id=None):
+def update_conversation(session: Session, conversation_id, user_id=None, name=None):
     conversation = read_conversation(session, conversation_id)
     if not conversation:
         return None
     if user_id:
         conversation.user_id = user_id
+    if name:
+        conversation.name = name
     session.commit()
     return conversation
 

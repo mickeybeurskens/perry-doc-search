@@ -40,6 +40,7 @@ class ConversationQuery(BaseModel):
 
 class ConversationInfo(BaseModel):
     id: int
+    name: str
     user_id: int
     agent_settings: dict
     doc_ids: list[int]
@@ -63,6 +64,7 @@ def check_owned_conversation(db, conversation_id, user_id) -> DBConversation:
 def conversation_db_to_info(db_conversation: DBConversation) -> ConversationInfo:
     return ConversationInfo(
         id=db_conversation.id,
+        name=db_conversation.name,
         user_id=db_conversation.user_id,
         agent_settings=db_conversation.agent.config,
         doc_ids=[doc.id for doc in db_conversation.documents],
@@ -103,18 +105,25 @@ async def conversation_agent_setup(
             detail="Invalid agent type provided.",
         )
     new_agent_id = create_agent(db)
-    # try:
-    agent = agent_class(db, conversation_config.agent_settings, agent_id=new_agent_id)
-    agent.save()
-    # except Exception:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Invalid agent settings provided.",
-    #     )
+    try:
+        agent = agent_class(
+            db, conversation_config.agent_settings, agent_id=new_agent_id
+        )
+        agent.save()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid agent settings provided.",
+        )
 
     conversation_id = create_conversation(db)
     try:
-        update_conversation(db, conversation_id, user_id=db_user_id)
+        update_conversation(
+            db,
+            conversation_id,
+            user_id=db_user_id,
+            name=conversation_config.name,
+        )
         update_agent(db, new_agent_id, conversation_id=conversation_id)
         for doc in docs:
             conv_ids = [conv.id for conv in doc.conversations]
