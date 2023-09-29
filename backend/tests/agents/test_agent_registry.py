@@ -18,17 +18,16 @@ def test_agent_registry_singleton():
 
 def test_register_agent(create_registry):
     registry = create_registry
-    MockAgent = Mock(spec=BaseAgent)
-    registry.register_agent("mock", MockAgent)
-    assert "mock" in registry._agent_registry
-    assert registry._agent_registry["mock"] == MockAgent
+    registry.register_agent(DummyAgent)
+    assert "DummyAgent" in registry._agent_registry
+    assert registry._agent_registry["DummyAgent"] == DummyAgent
 
 
 def test_get_registered_agent_class(create_registry):
     registry = create_registry
-    registry.register_agent("dummy", DummyAgent)
+    registry.register_agent(DummyAgent)
 
-    retrieved_class = registry.get_agent_class("dummy")
+    retrieved_class = registry.get_agent_class("DummyAgent")
 
     assert retrieved_class == DummyAgent
 
@@ -44,17 +43,17 @@ def test_get_unregistered_agent_class_raises_value_error(create_registry):
 
 def test_get_agent_types(create_registry):
     registry = create_registry
-    names = ["agent1", "agent2", "agent3"]
+    names = ["DummyAgent"]
     for name in names:
-        registry.register_agent(name, DummyAgent)
+        registry.register_agent(DummyAgent)
 
     assert registry.get_agent_types() == names
 
 
 def get_agent_settings_schema(create_registry):
     registry = create_registry
-    registry.register_agent("dummy", DummyAgent)
+    registry.register_agent(DummyAgent)
 
-    schema = registry.get_agent_settings_schema("dummy")
+    schema = registry.get_agent_settings_schema("DummyAgent")
 
     assert schema == DummyAgent._get_config_class().schema()

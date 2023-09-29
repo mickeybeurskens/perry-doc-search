@@ -126,28 +126,51 @@ def create_conversation(request_manager: RequestManager):
         )
 
 
-def list_conversations(request_manager: RequestManager):
+def list_conversations_with_delete_checkbox(request_manager: RequestManager):
     st.title("Overview")
     conversation_response = request_manager.get_conversations(
         st.session_state["jwt_token"]
     )
+    delete_conv = {}
+    delete_button = st.button("Delete selected conversations")
+
     if conversation_response.status_code == 200:
         conversations = conversation_response.json()
         if not conversations:
             st.info("No conversations found.")
             return
         for conversation in conversations:
-            st.info(conversation)
+            st.subheader(conversation["name"])
+            # st.write(conversation)
+            col_1, col_2 = st.columns([1, 35])
+            delete_conv[conversation["id"]] = col_1.checkbox("", key=conversation["id"])
+            col_2.write("__ID:__ " + str(conversation["id"]))
+            # st.write("Agent type: " + str(conversation["agent_type"]))
+            st.write("__Agent settings:__ " + str(conversation["agent_settings"]))
+            st.write("__Documents__: " + str(conversation["doc_titles"]))
             st.divider()
     else:
         st.write("Failed to get conversations.")
         st.write(conversation_response.status_code)
         st.write(conversation_response)
+    
+    if delete_button:
+        for del_id in delete_conv.keys():
+            if delete_conv[del_id]:
+                delete_response = request_manager.delete_conversation(
+                    st.session_state["jwt_token"], del_id
+                )
+                if not delete_response.status_code == 204:
+                    st.warning("Failed to delete conversation.")
+                    st.warning(delete_response.status_code)
+                    st.warning(delete_response.json())
+        st.rerun()
+
 
 
 def handle_session(request_manager):
     create_conversation(request_manager)
-    list_conversations(request_manager)
+    list_conversations_with_delete_checkbox(request_manager)
 
 
 def main():

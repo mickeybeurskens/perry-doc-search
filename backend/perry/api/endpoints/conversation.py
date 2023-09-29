@@ -42,6 +42,7 @@ class ConversationInfo(BaseModel):
     id: int
     name: str
     user_id: int
+    agent_type: str
     agent_settings: dict
     doc_ids: list[int]
     doc_titles: list[str]
@@ -66,6 +67,7 @@ def conversation_db_to_info(db_conversation: DBConversation) -> ConversationInfo
         id=db_conversation.id,
         name=db_conversation.name,
         user_id=db_conversation.user_id,
+        agent_type=db_conversation.agent.type,
         agent_settings=db_conversation.agent.config,
         doc_ids=[doc.id for doc in db_conversation.documents],
         doc_titles=[doc.title for doc in db_conversation.documents],

@@ -28,6 +28,7 @@ def update_agent(
     agent_id: int,
     conversation_id: int = None,
     config_data: dict = None,
+    agent_type: str = None,
 ):
     agent = read_agent(session, agent_id)
     if not agent:
@@ -36,5 +37,7 @@ def update_agent(
         agent.conversation_id = conversation_id
     if config_data:
         agent.config = config_data
+    if agent_type:
+        agent.type = agent_type
     session.commit()
     return True

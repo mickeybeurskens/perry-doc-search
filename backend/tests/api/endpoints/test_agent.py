@@ -12,7 +12,7 @@ def mock_agent_registry(monkeypatch):
         "perry.api.app.init_agent_registry", Mock(return_value=AgentRegistry())
     )
     registry = AgentRegistry()
-    registry.register_agent("Mock", DummyAgent)
+    registry.register_agent(DummyAgent)
     yield registry
     registry._instance = None
 
@@ -38,6 +38,6 @@ def test_get_agent_registry_info_returns_agent_schemas(
     response = test_client.get(AGENTS_URL + "/info")
     assert response.status_code == 200
     assert {
-        "name": "Mock",
+        "name": DummyAgent.__name__,
         "settings_schema": DummyAgent._get_config_class().schema()["properties"],
     } in response.json()

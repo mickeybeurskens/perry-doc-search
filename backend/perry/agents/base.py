@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Type
 from threading import Lock
 from functools import wraps
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from perry.db.models import Agent as DBAgent
 from perry.db.operations.agents import read_agent, update_agent
@@ -25,7 +25,10 @@ def busy_toggle(func):
 
 
 class BaseAgentConfig(BaseModel):
-    name: str
+    name: str = Field(
+        type="string",
+        title="Agent Name",
+    )
 
 
 class BaseAgent(ABC):
@@ -59,7 +62,12 @@ class BaseAgent(ABC):
     @busy_toggle
     def save(self):
         """Save the state of the agent."""
-        update_agent(self._db_session, self.id, config_data=self.config.dict())
+        update_agent(
+            self._db_session,
+            self.id,
+            config_data=self.config.dict(),
+            agent_type=self.__class__.__name__,
+        )
         self._on_save()
 
     @classmethod
@@ -114,8 +122,8 @@ class AgentRegistry:
             cls._instance._agent_registry: Dict[str, Type[BaseAgent]] = {}
         return cls._instance
 
-    def register_agent(self, agent_type: str, agent_class: Type[BaseAgent]):
-        self._agent_registry[agent_type] = agent_class
+    def register_agent(self, agent_class: Type[BaseAgent]):
+        self._agent_registry[agent_class.__name__] = agent_class
 
     def get_agent_class(self, agent_type: str) -> Type[BaseAgent]:
         agent_class = self._agent_registry.get(agent_type)

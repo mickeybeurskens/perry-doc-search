@@ -128,6 +128,7 @@ class Agent(Base):
     __tablename__ = "agents"
 
     id = Column(Integer, primary_key=True, index=True)
+    type = Column(String)
     conversation_id = Column(Integer, ForeignKey("conversations.id"), unique=True)
 
     conversation = relationship("Conversation", back_populates="agent")

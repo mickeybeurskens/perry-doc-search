@@ -44,6 +44,18 @@ class RequestManager:
             headers=self._get_auth_header(token),
             json=json
         )
+    
+    def delete_conversation(self, token, conversation_id):
+        return requests.delete(
+            f"{self.base_url}/conversations/{conversation_id}",
+            headers=self._get_auth_header(token),
+        )
+    
+    def get_conversation_info(self, token, conversation_id):
+        return requests.get(
+            f"{self.base_url}/conversations/{conversation_id}",
+            headers=self._get_auth_header(token),
+        )
 
     def get_document_list(self, token):
         return requests.get(

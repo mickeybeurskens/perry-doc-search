@@ -36,7 +36,7 @@ def get_mock_conversation(id=1, user_id=1):
     conv = Mock(
         id=id,
         user_id=user_id,
-        agent=Mock(config={}),
+        agent=Mock(config={}, type="dummy"),
         documents=[
             Mock(id=1, title=""),
             Mock(id=2, title=""),
@@ -183,6 +183,7 @@ def test_get_user_conversations_returns_list_of_conversations(
     conversation_info_check = lambda conv: {
         "id": conv.id,
         "user_id": conv.user_id,
+        "agent_type": conv.agent.type,
         "agent_settings": conv.agent.config,
         "doc_ids": [doc.id for doc in conv.documents],
         "doc_titles": [doc.title for doc in conv.documents],
@@ -410,6 +411,7 @@ def test_get_conversation_info_succeeds(
     assert response.json() == {
         "id": 1,
         "user_id": 1,
+        "agent_type": "dummy",
         "agent_settings": {},
         "doc_ids": [1, 2, 3],
         "doc_titles": ["", "", ""],

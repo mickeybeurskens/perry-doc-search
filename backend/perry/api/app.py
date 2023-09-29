@@ -17,8 +17,8 @@ AGENTS_URL = "/agents"
 
 
 def init_agent_registry():
-    AgentRegistry().register_agent("Echo", EchoAgent)
-    AgentRegistry().register_agent("Subquestion", SubquestionAgent)
+    AgentRegistry().register_agent(EchoAgent)
+    AgentRegistry().register_agent(SubquestionAgent)
 
 
 init_agent_registry()
