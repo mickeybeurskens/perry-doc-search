@@ -17,14 +17,15 @@ def handle_conversation_selection(request_manager: RequestManager):
                 for conversation in conversation_info
             ],
         )
-        conversation_id = int(conversation_id.split(":")[0])
-        conversation = [
-            conversation
-            for conversation in conversation_info
-            if conversation["id"] == conversation_id
-        ][0]
-        if conversation:
-            display_conversation_info(conversation)
+        if conversation_id:
+            conversation_id = int(conversation_id.split(":")[0])
+            conversation = [
+                conversation
+                for conversation in conversation_info
+                if conversation["id"] == conversation_id
+            ][0]
+            if conversation:
+                display_conversation_info(conversation)
     else:
         st.write("Failed to retrieve conversations.")
         st.write(conversation_info.status_code)
@@ -34,14 +35,13 @@ def handle_conversation_selection(request_manager: RequestManager):
 
 def display_conversation_info(conversation_info):
     st.write(conversation_info)
-    # st.sidebar.write("__Agent Type:__ ", conversation_info["agent_type"])
+    st.sidebar.write("__Agent Type:__ ", conversation_info["agent_type"])
     st.sidebar.write("__Agent Settings:__", conversation_info["agent_settings"])
     st.sidebar.write("__Documents:__")
     if len(conversation_info["doc_titles"]) == 0:
         st.sidebar.info("- No documents")
     else:
-        for doc_title in conversation_info["doc_titles"]:
-            st.sidebar.info("-", doc_title)
+        st.sidebar.write([doc_title for doc_title in conversation_info["doc_titles"]])
 
 
 def handle_user_display(request_manager):
