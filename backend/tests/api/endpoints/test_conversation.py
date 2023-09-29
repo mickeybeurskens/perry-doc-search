@@ -76,7 +76,9 @@ def get_user_conversation_mock(conversation_mock, test_client, monkeypatch):
 
 @pytest.fixture(scope="function")
 def create_conversation_mock(conversation_mock, test_client, monkeypatch):
-    monkeypatch.setattr(str_path_conv_endpoint() + ".create_conversation", lambda: True)
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".create_conversation", lambda db: True
+    )
     mock_get_user_documents = Mock(
         return_value=[
             Mock(id=1, conversations=[]),
@@ -298,9 +300,9 @@ def test_create_conversation_updates_document_with_conversation_id(
 
     assert response.status_code == status.HTTP_201_CREATED
     assert mock_update_document.call_count == 3
-    assert mock_update_document.call_args_list[0][1]["conversation_id"] == [1]
-    assert mock_update_document.call_args_list[1][1]["conversation_id"] == [1]
-    assert mock_update_document.call_args_list[2][1]["conversation_id"] == [1]
+    assert mock_update_document.call_args_list[0][1]["conversation_ids"] == [1]
+    assert mock_update_document.call_args_list[1][1]["conversation_ids"] == [1]
+    assert mock_update_document.call_args_list[2][1]["conversation_ids"] == [1]
 
 
 def test_query_conversation_agent_errors_on_non_authorized_conversation(

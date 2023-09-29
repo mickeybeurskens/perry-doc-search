@@ -1,6 +1,8 @@
 import asyncio
 import os
+from enum import Enum
 from pathlib import Path
+from pydantic import confloat
 from llama_index import (
     Document,
     SimpleDirectoryReader,
@@ -24,12 +26,17 @@ from perry.db.models import Document as DBDocument, User as DBUser, Agent as DBA
 from perry.db.operations.documents import get_document
 
 
+class OpenAILanguageModelType(str, Enum):
+    GPT_4 = "gpt-4"
+    GPT_4_32_K = "gpt-4-32k"
+    GPT_3_5_TURBO = "gpt-3.5-turbo"
+
+
 class SubquestionConfig(BaseAgentConfig):
     """Configuration for the SubquestionAgent."""
 
-    name: str
-    language_model_name: str
-    temperature: float
+    language_model_type: OpenAILanguageModelType = OpenAILanguageModelType.GPT_4
+    temperature: confloat(ge=0.0, le=1.0) = 0.0
 
 
 class SubquestionAgent(BaseAgent):
@@ -40,7 +47,7 @@ class SubquestionAgent(BaseAgent):
     def _setup(self):
         self._service_context = self._get_new_service_context(
             self._get_new_model(
-                self.config.language_model_name, self.config.temperature
+                self.config.language_model_type, self.config.temperature
             )
         )
         self._engine = self._create_engine()
