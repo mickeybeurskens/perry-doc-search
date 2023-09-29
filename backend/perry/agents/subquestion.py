@@ -2,7 +2,7 @@ import asyncio
 import os
 from enum import Enum
 from pathlib import Path
-from pydantic import confloat
+from pydantic import confloat, Field
 from llama_index import (
     Document,
     SimpleDirectoryReader,
@@ -26,7 +26,7 @@ from perry.db.models import Document as DBDocument, User as DBUser, Agent as DBA
 from perry.db.operations.documents import get_document
 
 
-class OpenAILanguageModelType(str, Enum):
+class ModelType(str, Enum):
     GPT_4 = "gpt-4"
     GPT_4_32_K = "gpt-4-32k"
     GPT_3_5_TURBO = "gpt-3.5-turbo"
@@ -35,7 +35,13 @@ class OpenAILanguageModelType(str, Enum):
 class SubquestionConfig(BaseAgentConfig):
     """Configuration for the SubquestionAgent."""
 
-    language_model_type: OpenAILanguageModelType = OpenAILanguageModelType.GPT_4
+    language_model_type: ModelType = Field(
+        ModelType.GPT_4,
+        title="Language model type",
+        type="string",
+        choices=[i.value for i in ModelType],
+        description=f"The type of language model to use. Choose from {', '.join([i.value for i in ModelType])}.",
+    )
     temperature: confloat(ge=0.0, le=1.0) = 0.0
 
 
@@ -82,12 +88,13 @@ class SubquestionAgent(BaseAgent):
 
     def _get_doc_paths(self) -> dict[int, Path]:
         """Return a list of paths to the documents in the conversation with ids as dictionary keys."""
-        documents = self._agent_data.conversation.documents
         doc_paths = {}
-        for document in documents:
-            doc_path = Path(document.file_path)
-            self._validate_pdf_path(doc_path)
-            doc_paths[document.id] = doc_path
+        if hasattr(self._agent_data.conversation, "documents"):
+            documents = self._agent_data.conversation.documents
+            for document in documents:
+                doc_path = Path(document.file_path)
+                self._validate_pdf_path(doc_path)
+                doc_paths[document.id] = doc_path
         return doc_paths
 
     def _validate_pdf_path(self, doc_path: Path):

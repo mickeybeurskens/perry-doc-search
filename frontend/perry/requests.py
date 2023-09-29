@@ -33,22 +33,12 @@ class RequestManager:
         )
     
     def create_conversation(self, token, name, agent_type, agent_settings, doc_ids):
-        import streamlit as st
-
-        assert isinstance(doc_ids, list)
-        assert isinstance(agent_settings, dict)
-        assert isinstance(name, str)
-        assert isinstance(agent_type, str)
-        if doc_ids:
-            assert [isinstance(doc_id, int) for doc_id in doc_ids]
-
         json = {
             "name": name,
             "agent_type": agent_type,
             "agent_settings": agent_settings,
             "doc_ids": doc_ids,
         }
-        st.write(json)
         return requests.post(
             f"{self.base_url}/conversations/",
             headers=self._get_auth_header(token),
