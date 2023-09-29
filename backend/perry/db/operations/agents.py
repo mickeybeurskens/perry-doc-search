@@ -29,7 +29,7 @@ def update_agent(
     conversation_id: int = None,
     config_data: dict = None,
 ):
-    agent = session.query(Agent).filter_by(id=agent_id).first()
+    agent = read_agent(session, agent_id)
     if not agent:
         return None
     if conversation_id:

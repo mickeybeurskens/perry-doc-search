@@ -16,6 +16,7 @@ from perry.db.operations.conversations import (
 )
 from perry.db.operations.agents import (
     update_agent,
+    create_agent
 )
 from perry.db.operations.users import get_user
 from perry.agents.manager import AgentManager
@@ -104,22 +105,22 @@ async def conversation_agent_setup(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid agent type provided.",
         )
-
-    try:
-        agent = agent_class(db, conversation_config.agent_settings)
+    new_agent_id = create_agent(db)
+    try:  
+        agent = agent_class(db, conversation_config.agent_settings, agent_id=new_agent_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid agent settings provided.",
         )
 
-    conversation_id = create_conversation()
+    conversation_id = create_conversation(db)
     try:
         update_conversation(db, conversation_id, user_id=db_user_id)
-        update_agent(db, agent, conversation_id=conversation_id)
+        update_agent(db, new_agent_id, conversation_id=conversation_id)
         for doc in docs:
             conv_ids = [conv.id for conv in doc.conversations]
-            update_document(db, doc.id, conversation_id=conv_ids + [conversation_id])
+            update_document(db, doc.id, conversation_ids = conv_ids + [conversation_id])
     except Exception:
         delete_conversation(db, conversation_id)
         raise HTTPException(

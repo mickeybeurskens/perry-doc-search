@@ -14,7 +14,7 @@ def read_conversation(session: Session, conversation_id):
 
 
 def update_conversation(session: Session, conversation_id, user_id=None):
-    conversation = session.query(Conversation).filter_by(id=conversation_id).first()
+    conversation = read_conversation(session, conversation_id)
     if not conversation:
         return None
     if user_id:
