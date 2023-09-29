@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from perry.api.authentication import get_current_user_id
 from perry.api.schemas import APIDocument
 from perry.db.operations.documents import (
-    get_document,
     get_user_documents,
     update_document,
 )
@@ -16,9 +15,6 @@ from perry.db.operations.conversations import (
     Conversation as DBConversation,
 )
 from perry.db.operations.agents import (
-    create_agent,
-    delete_agent,
-    read_agent,
     update_agent,
 )
 from perry.db.operations.users import get_user
@@ -102,7 +98,7 @@ async def conversation_agent_setup(
         )
 
     try:
-        agent_class = AgentRegistry.get_agent_class(conversation_config.agent_type)
+        agent_class = AgentRegistry().get_agent_class(conversation_config.agent_type)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

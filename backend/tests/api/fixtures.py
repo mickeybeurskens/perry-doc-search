@@ -5,10 +5,10 @@ from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
 from perry.db.operations.users import get_user
 from tests.conftest import get_mock_secret_key
-from perry.api.app import app
+from perry.api.app import app, init_agent_registry
 from perry.api.dependencies import get_db
 from perry.api.authentication import get_current_user_id
-from perry.api.endpoints.agent import init_registry, AgentRegistry
+from perry.agents.base import AgentRegistry
 
 
 @pytest.fixture(scope="function")
@@ -18,7 +18,7 @@ def test_client(test_db):
 
     with TestClient(app) as client:
         client.app.dependency_overrides[get_db] = get_mock_db
-        client.app.dependency_overrides[init_registry] = lambda: AgentRegistry()
+        client.app.dependency_overrides[init_agent_registry] = lambda: AgentRegistry()
         yield client
 
 

@@ -9,7 +9,7 @@ from tests.agents.fixtures import DummyAgent
 @pytest.fixture
 def mock_agent_registry(monkeypatch):
     monkeypatch.setattr(
-        "perry.api.endpoints.agent.init_registry", Mock(return_value=AgentRegistry())
+        "perry.api.app.init_agent_registry", Mock(return_value=AgentRegistry())
     )
     registry = AgentRegistry()
     registry.register_agent("Mock", DummyAgent)
