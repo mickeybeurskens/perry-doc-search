@@ -104,8 +104,7 @@ def list_conversations(request_manager: RequestManager):
             st.info("No conversations found.")
             return
         for conversation in conversations:
-            st.write("__Name:__ " + conversation["name"])
-            st.info("Description: " + conversation["description"])
+            st.info(conversation)
             st.divider()
     else:
         st.write("Failed to get conversations.")
@@ -115,7 +114,7 @@ def list_conversations(request_manager: RequestManager):
 
 def handle_session(request_manager):
     create_conversation(request_manager)
-    # list_conversations(request_manager)
+    list_conversations(request_manager)
 
 
 def main():
