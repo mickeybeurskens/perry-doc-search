@@ -128,4 +128,4 @@ class AgentRegistry:
 
     def get_agent_settings_schema(self, agent_type: str):
         agent_class = self.get_agent_class(agent_type)
-        return agent_class._get_config_class().schema()
+        return agent_class._get_config_class().schema()["properties"]

@@ -21,7 +21,7 @@ def mock_api_doc(*args, **kwargs):
 
 
 @pytest.fixture(scope="function")
-def mock_get_user_id(test_client):
+def mock_get_user_id_and_return_id(test_client):
     user_id = 1
     test_client.app.dependency_overrides[get_current_user_id] = lambda: user_id
     yield user_id
@@ -63,7 +63,7 @@ def mock_create_doc_db_operations(monkeypatch, test_client, mock_get_user_id):
     monkeypatch.setattr(
         "perry.api.endpoints.document.check_max_documents", lambda *args, **kwargs: None
     )
-    user_id = mock_get_user_id
+    user_id = mock_get_user_id_and_return_id
     file_content = b"Some PDF content"
 
     return mock_save_file, mock_update_document, mock_remove_file, file_content, user_id

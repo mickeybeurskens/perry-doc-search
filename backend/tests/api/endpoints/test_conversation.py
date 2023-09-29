@@ -46,12 +46,8 @@ def get_mock_conversation(id=1, user_id=1):
 
 
 @pytest.fixture(scope="function")
-def conversation_mock(test_client):
-    test_client.app.dependency_overrides[
-        get_current_user_id
-    ] = lambda: get_test_user_id()
+def conversation_mock(mock_get_user_id):
     yield
-    test_client.app.dependency_overrides.pop(get_current_user_id)
 
 
 @pytest.fixture(scope="function")

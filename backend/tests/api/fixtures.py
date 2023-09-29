@@ -7,6 +7,8 @@ from perry.db.operations.users import get_user
 from tests.conftest import get_mock_secret_key
 from perry.api.app import app
 from perry.api.dependencies import get_db
+from perry.api.authentication import get_current_user_id
+from perry.api.endpoints.agent import init_registry, AgentRegistry
 
 
 @pytest.fixture(scope="function")
@@ -16,6 +18,7 @@ def test_client(test_db):
 
     with TestClient(app) as client:
         client.app.dependency_overrides[get_db] = get_mock_db
+        client.app.dependency_overrides[init_registry] = lambda: AgentRegistry()
         yield client
 
 
@@ -61,3 +64,11 @@ def mock_get_db_session(monkeypatch, test_db):
     monkeypatch.setattr(
         "perry.db.session.DatabaseSessionManager.get_db_session", test_db
     )
+
+
+@pytest.fixture(scope="function")
+def mock_get_user_id(test_client):
+    user_id = 1
+    test_client.app.dependency_overrides[get_current_user_id] = lambda: user_id
+    yield user_id
+    test_client.app.dependency_overrides.pop(get_current_user_id)
