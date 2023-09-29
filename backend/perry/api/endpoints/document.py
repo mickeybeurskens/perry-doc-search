@@ -46,6 +46,10 @@ def check_max_documents(user: DBUser):
         )
 
 
+def api_doc_from_db_doc(db_doc):
+    return APIDocument(title=db_doc.title, id=db_doc.id, description=db_doc.description)
+
+
 @file_router.post("/", status_code=status.HTTP_201_CREATED)
 async def upload_file(
     file: UploadFile,
@@ -130,7 +134,7 @@ async def get_all_docs(
     docs = []
     for doc in db_documents:
         docs.append(
-            APIDocument(title=doc.title, id=doc.id, description=doc.description)
+            api_doc_from_db_doc(doc),
         )
     return docs
 
@@ -152,7 +156,7 @@ async def get_doc_by_id(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to get document",
         )
-    return APIDocument(title=doc.title, id=doc.id)
+    return api_doc_from_db_doc(doc)
 
 
 @document_router.put("/{document_id}", status_code=status.HTTP_200_OK)

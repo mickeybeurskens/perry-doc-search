@@ -16,8 +16,8 @@ class EchoAgent(BaseAgent):
 
     @classmethod
     @staticmethod
-    def _get_config_instance(config_data: dict) -> BaseAgentConfig:
-        return BaseAgentConfig(**config_data)
+    def _get_config_class() -> type[BaseAgentConfig]:
+        return BaseAgentConfig
 
     @classmethod
     def _on_load(

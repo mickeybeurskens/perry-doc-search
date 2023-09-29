@@ -58,9 +58,8 @@ class SubquestionAgent(BaseAgent):
         return cls(db_session, config, agent_id)
 
     @classmethod
-    @staticmethod
-    def _get_config_instance(config_data: dict) -> SubquestionConfig:
-        return SubquestionConfig(**config_data)
+    def _get_config_class(cls) -> type[SubquestionConfig]:
+        return SubquestionConfig
 
     @staticmethod
     def _get_new_model(model: str, temperature: float) -> LLM:

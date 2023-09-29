@@ -52,11 +52,6 @@ class BaseAgent(ABC):
         response = await self._on_query(query)
         return response
 
-    @classmethod
-    @abstractmethod
-    def _get_config_instance(cls, config_data: dict) -> BaseAgentConfig:
-        """Return the config class used."""
-
     @abstractmethod
     def _on_save(self):
         """Agent specific save logic."""
@@ -88,6 +83,16 @@ class BaseAgent(ABC):
         return db_agent
 
     @classmethod
+    @abstractmethod
+    def _get_config_class(cls) -> type[BaseAgentConfig]:
+        """Return the config class used."""
+
+    @classmethod
+    def _get_config_instance(cls, config_data: dict) -> BaseAgentConfig:
+        """Return the config class used."""
+        return cls._get_config_class()(**config_data)
+
+    @classmethod
     def _get_saved_config(cls, db_session: Session, agent_id: int) -> BaseAgentConfig:
         agent_data = cls._load_agent_data(db_session, agent_id)
         cls._assert_config_data(agent_data)
@@ -117,3 +122,10 @@ class AgentRegistry:
         if not agent_class:
             raise ValueError(f"Agent type {agent_type} not found.")
         return agent_class
+
+    def get_agent_types(self):
+        return list(self._agent_registry.keys())
+
+    def get_agent_settings_schema(self, agent_type: str):
+        agent_class = self.get_agent_class(agent_type)
+        return agent_class._get_config_class().schema()

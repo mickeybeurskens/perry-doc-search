@@ -26,8 +26,8 @@ class DummyAgent(BaseAgent):
         pass
 
     @classmethod
-    def _get_config_instance(cls, config_data: dict) -> BaseAgentConfig:
-        return BaseAgentConfig(**config_data)
+    def _get_config_class(cls) -> BaseAgentConfig:
+        return BaseAgentConfig
 
 
 def create_mock_llm():
