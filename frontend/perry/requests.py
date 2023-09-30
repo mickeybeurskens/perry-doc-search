@@ -81,6 +81,13 @@ class RequestManager:
             f"{self.base_url}/documents/file/{document_id}",
             headers=self._get_auth_header(token),
         )
+    
+    def query_agent(self, token, conversation_id, query):
+        return requests.post(
+            f"{self.base_url}/conversations/{conversation_id}",
+            headers=self._get_auth_header(token),
+            json={"query": query},
+        )
 
     def _get_auth_header(self, token):
         return {"Authorization": f"Bearer {token}"}
