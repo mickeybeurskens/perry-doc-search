@@ -8,6 +8,7 @@ from perry.db.operations.agents import create_agent, update_agent
 from perry.db.operations.conversations import create_conversation
 from perry.db.operations.documents import create_document, update_document
 from perry.db.operations.users import create_user
+from perry.db.operations.messages import create_message
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,6 +55,17 @@ def add_conversation_to_db(test_db) -> int:
         return create_conversation(test_db)
 
     return _add_conversation_to_db
+
+
+@pytest.fixture(scope="function")
+def add_message_to_db(test_db) -> list[int]:
+    """Add a message to the database and return its ID."""
+
+    def _add_message_to_db(num_messages: int):
+        message_id = create_message(test_db, 1, "user", "test message")
+        return message_id
+
+    return _add_message_to_db
 
 
 @pytest.fixture(scope="function")

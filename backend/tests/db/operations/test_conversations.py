@@ -3,7 +3,9 @@ from perry.db.operations.conversations import (
     read_conversation,
     update_conversation,
     delete_conversation,
+    add_messages_to_conversation,
 )
+from perry.db.operations.messages import read_message
 from perry.db.models import Conversation
 
 
@@ -44,3 +46,25 @@ def test_delete_nonexistent_conversation(test_db):
 
 def test_read_nonexistent_conversation(test_db):
     assert read_conversation(test_db, 9999) is None
+
+
+def test_add_messages_to_conversation_nonexistent_conversation(test_db):
+    assert add_messages_to_conversation(test_db, 9999, [1, 2, 3]) is None
+
+
+def test_add_messages_to_conversation_nonexistent_message(
+    test_db, add_conversation_to_db
+):
+    conv_id = add_conversation_to_db()
+    assert add_messages_to_conversation(test_db, conv_id, [9999]) is None
+
+
+def test_add_messages_to_conversation_returns_messages(
+    test_db, add_conversation_to_db, add_message_to_db
+):
+    conv_id = add_conversation_to_db()
+    message_ids = [add_message_to_db(1), add_message_to_db(2), add_message_to_db(3)]
+    conv = add_messages_to_conversation(test_db, conv_id, message_ids)
+    conv_message_ids = [message.id for message in conv.messages]
+    assert conv is not None
+    assert conv_message_ids == message_ids

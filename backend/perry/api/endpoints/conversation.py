@@ -1,4 +1,5 @@
 from typing import Annotated
+from datetime import datetime
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from perry.api.authentication import get_current_user_id
@@ -12,8 +13,10 @@ from perry.db.operations.conversations import (
     delete_conversation,
     read_conversation,
     update_conversation,
+    add_messages_to_conversation,
     Conversation as DBConversation,
 )
+from perry.db.operations.messages import create_message, delete_message
 from perry.db.operations.agents import update_agent, create_agent
 from perry.db.operations.users import get_user
 from perry.agents.manager import AgentManager
@@ -25,6 +28,12 @@ conversation_router = APIRouter()
 
 
 from pydantic import BaseModel
+
+
+class ConversationMessage(BaseModel):
+    role: str
+    message: str
+    timestamp: datetime
 
 
 class ConversationConfig(BaseModel):
@@ -155,6 +164,27 @@ async def get_conversation_info(
     return conversation_db_to_info(conversation)
 
 
+@conversation_router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK)
+async def get_conversation_message_history(
+    conversation_id: int,
+    db_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    check_owned_conversation(db, conversation_id, db_user_id)
+    conversation = read_conversation(db, conversation_id)
+    if conversation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Conversation not found.",
+        )
+    return [
+        ConversationMessage(
+            role=message.role, message=message.message, timestamp=message.timestamp
+        )
+        for message in conversation.messages
+    ]
+
+
 @conversation_router.delete("/{conversation_id}", status_code=status.HTTP_200_OK)
 async def remove_conversation_history(
     conversation_id: int,
@@ -192,5 +222,16 @@ async def query_conversation_agent(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Query failed.",
+        )
+    user_message_id = create_message(db, db_user_id, "user", conversation_query.query)
+    agent_message_id = create_message(db, db_user_id, "agent", answer)
+    if not add_messages_to_conversation(
+        db, conversation_id, [user_message_id, agent_message_id]
+    ):
+        delete_message(db, user_message_id)
+        delete_message(db, agent_message_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not add messages to conversation.",
         )
     return answer

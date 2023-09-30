@@ -8,7 +8,20 @@ def create_message(db: Session, user_id: int, role: str, message: str):
     db.add(message)
     db.commit()
     db.refresh(message)
-    return message
+    return message.id
+
+
+def read_message(db: Session, message_id: int):
+    return db.query(Message).filter(Message.id == message_id).first()
+
+
+def delete_message(db: Session, message_id: int):
+    message = read_message(db, message_id)
+    if not message:
+        return None
+    db.delete(message)
+    db.commit()
+    return True
 
 
 def get_messages_by_user(db: Session, user_id: int):
