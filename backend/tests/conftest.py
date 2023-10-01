@@ -9,15 +9,14 @@ from perry.db.operations.conversations import create_conversation
 from perry.db.operations.documents import create_document, update_document
 from perry.db.operations.users import create_user
 from perry.db.operations.messages import create_message
+from perry.db.session import DatabaseSessionManager
 
 
 @pytest.fixture(scope="session", autouse=True)
 def create_test_db() -> Session:
     """Setup a temporary database for testing."""
-    engine = create_engine("sqlite:///test_db.sqlite")
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
+    DatabaseSessionManager._db_name = "test_db"
+    session = DatabaseSessionManager.get_db_session()
     clear_db(session)
     return session
 

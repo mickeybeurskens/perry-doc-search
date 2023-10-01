@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
@@ -12,7 +14,17 @@ class DatabaseSessionManager:
     @classmethod
     def get_engine(cls):
         if cls._engine is None:
-            cls._engine = create_engine(f"sqlite:///./{cls._db_name}.db")
+            current_file_path = Path(__file__).resolve()
+            target_directory = current_file_path.parents[1]
+
+            if not target_directory.exists():
+                raise FileNotFoundError(f"The directory {target_directory} does not exist.")
+            if not os.access(target_directory, os.W_OK):
+                raise PermissionError(f"No write permission for directory {target_directory}")
+
+            db_path = target_directory / f"{cls._db_name}.db"
+            cls._engine = create_engine(f"sqlite:///{db_path}")
+            
             Base.metadata.create_all(bind=cls._engine)
         return cls._engine
 
