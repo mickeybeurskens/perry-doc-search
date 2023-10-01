@@ -1,4 +1,4 @@
-import asyncio
+import json
 import os
 from enum import Enum
 from pathlib import Path
@@ -49,6 +49,7 @@ class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
 
     _cache_path = Path(".cache", "subquestion")
+    _document_hash_file = Path(_cache_path, "doc_hashes.json")
 
     def _setup(self):
         self._service_context = self._get_new_service_context(
@@ -97,6 +98,29 @@ class SubquestionAgent(BaseAgent):
                 doc_paths[document.id] = doc_path
         return doc_paths
 
+    def _save_file_hashes(self):
+        documents = self._agent_data.conversation.documents
+        doc_hashes = {}
+        for document in documents:
+            doc_hashes[document.id] = document.hash
+        with self._document_hash_file.open("w") as f:
+            json.dump(doc_hashes, f)
+
+    def _load_file_hashes(self) -> dict[int, str]:
+        if not self._document_hash_file.exists():
+            return {}
+        with self._document_hash_file.open("r") as f:
+            return json.load(f)
+
+    def _file_hash_matches(self, doc_id: int) -> bool:
+        doc_hashes = self._load_file_hashes()
+        if doc_id not in doc_hashes:
+            return False
+        document = get_document(self._db_session, doc_id)
+        if document.hash != doc_hashes[doc_id]:
+            return False
+        return True
+
     def _validate_pdf_path(self, doc_path: Path):
         if not doc_path.is_file():
             raise Exception(
@@ -108,6 +132,7 @@ class SubquestionAgent(BaseAgent):
     def _create_engine(self):
         docs_grouped = self._load_docs()
         doc_vector_indexes = self._get_vector_indexes(docs_grouped)
+        self._save_file_hashes()
 
         return self._create_subquestion_engine(doc_vector_indexes)
 
@@ -151,7 +176,7 @@ class SubquestionAgent(BaseAgent):
         for doc_id in doc_sets.keys():
             save_path = Path(self._cache_path, str(doc_id))
 
-            if self._cache_exists(save_path):
+            if self._cache_exists(save_path) and self._file_hash_matches(doc_id):
                 indexes_info[doc_id] = self._load_index(doc_id)
             else:
                 indexes_info[doc_id] = self._create_index(doc_id, doc_sets[doc_id])

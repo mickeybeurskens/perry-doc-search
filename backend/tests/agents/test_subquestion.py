@@ -95,6 +95,7 @@ def test_get_vector_indexes_should_call_appropriate_methods_based_on_cache_exist
     mock_create_index = lambda self, doc_id, doc_set=None: f"Created {doc_id}"
 
     monkeypatch.setattr(SubquestionAgent, "_cache_exists", lambda self, x: cache_exists)
+    monkeypatch.setattr(SubquestionAgent, "_file_hash_matches", lambda self, x: True)
     monkeypatch.setattr(SubquestionAgent, "_load_index", mock_load_index)
     monkeypatch.setattr(SubquestionAgent, "_create_index", mock_create_index)
 
