@@ -17,6 +17,7 @@ def save_file(db_session: Session, bytes_obj: io.BytesIO, suffix: str) -> int:
     file_path = pathlib.Path(get_file_storage_path(), f"{new_doc.id}.{suffix}")
     try:
         new_doc.file_path = str(file_path)
+        new_doc.hash = _get_file_hash(bytes_obj)
         save_bytes_to_file(bytes_obj, file_path)
 
         db_session.commit()
@@ -173,3 +174,8 @@ def document_owned_by_user(db: Session, document_id: int, user_id: int):
     if user in doc.users:
         return True
     return False
+
+
+def _get_file_hash(file: io.BytesIO):
+    """Get a hash of the file."""
+    return hash(file.read())

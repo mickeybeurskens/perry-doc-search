@@ -48,7 +48,7 @@ class SubquestionConfig(BaseAgentConfig):
 class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
 
-    _cache_path = Path(".cache")
+    _cache_path = Path(".cache", "subquestion")
 
     def _setup(self):
         self._service_context = self._get_new_service_context(

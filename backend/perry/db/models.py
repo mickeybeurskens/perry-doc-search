@@ -91,6 +91,7 @@ class Document(Base):
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True)
+    hash = Column(String)
     users = relationship(
         "User", secondary=user_document_relation, back_populates="documents"
     )

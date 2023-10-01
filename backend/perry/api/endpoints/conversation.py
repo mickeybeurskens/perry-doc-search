@@ -210,28 +210,38 @@ async def query_conversation_agent(
         detail="Could not load agent.",
     )
     try:
-        agent = agent_manager.load_agent(db, conversation_id)
+        conversation = read_conversation(db, conversation_id)
+        agent = agent_manager.load_agent(db, conversation.agent.id)
         if not agent:
             raise agent_not_found_exception
     except Exception:
         raise agent_not_found_exception
 
-    try:
-        answer = await agent.query(conversation_query.query)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Query failed.",
-        )
-    user_message_id = create_message(db, db_user_id, "user", conversation_query.query)
-    agent_message_id = create_message(db, db_user_id, "agent", answer)
-    if not add_messages_to_conversation(
-        db, conversation_id, [user_message_id, agent_message_id]
-    ):
-        delete_message(db, user_message_id)
-        delete_message(db, agent_message_id)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not add messages to conversation.",
-        )
+    query_failed_exception = HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Query failed.",
+    )
+
+    import logging
+
+    # try:
+    answer = await agent.query(conversation_query.query)
+    if not answer:
+        raise query_failed_exception
+    # except Exception:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Query failed.",
+    #     )
+    # user_message_id = create_message(db, db_user_id, "user", conversation_query.query)
+    # agent_message_id = create_message(db, db_user_id, "agent", answer)
+    # if not add_messages_to_conversation(
+    #     db, conversation_id, [user_message_id, agent_message_id]
+    # ):
+    #     delete_message(db, user_message_id)
+    #     delete_message(db, agent_message_id)
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Could not add messages to conversation.",
+    #     )
     return answer

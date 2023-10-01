@@ -13,7 +13,8 @@ def test_create_message(test_db, create_user_in_db):
     role = "user"
     message_text = "Hello, world!"
 
-    created_message = create_message(test_db, user_id, role, message_text)
+    created_message_id = create_message(test_db, user_id, role, message_text)
+    created_message = read_message(test_db, created_message_id)
 
     assert created_message.id is not None
     assert created_message.user_id == user_id

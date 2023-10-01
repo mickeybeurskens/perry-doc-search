@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import Mock
 from perry.agents.manager import AgentManager
+from perry.agents.base import AgentRegistry
+from perry.db.operations.agents import read_agent
 from tests.agents.fixtures import DummyAgent
 from datetime import datetime, timedelta
 import freezegun
@@ -17,18 +19,21 @@ def manager():
 
 
 @pytest.fixture
-def dummy_agent(test_db, add_agent_to_db):
+def dummy_agent(test_db, add_agent_to_db, monkeypatch):
     with freezegun.freeze_time(mock_time()):
         agent_id = add_agent_to_db()
+        db_agent = read_agent(test_db, agent_id)
+        monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: db_agent)
+
+        AgentRegistry().register_agent(DummyAgent)
         agent = DummyAgent(test_db, {"name": "dummy"}, agent_id)
         agent.save()
+        monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: agent)
+
         return agent
 
 
 def test_load_agent_populates_dict(test_db, dummy_agent, manager, monkeypatch):
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
-
     test_id = 1
     agent = manager.load_agent(test_db, test_id)
     assert test_id in manager.agent_dict
@@ -48,9 +53,6 @@ def test_id_should_be_int(test_db, manager):
 
 
 def test_remove_agent_deletes_from_dict(test_db, dummy_agent, manager, monkeypatch):
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
-
     test_id = 1
     manager.load_agent(test_db, test_id)
     assert test_id in manager.agent_dict
@@ -75,10 +77,6 @@ def test_reset_should_reset_state(test_db, dummy_agent, manager, monkeypatch):
 def test_remove_agent_does_not_delete_busy_agent(
     test_db, dummy_agent, manager, monkeypatch
 ):
-    # Mock the read_agent and BaseAgent.load functions
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
-
     test_id = 1
     agent = manager.load_agent(test_db, test_id)
     agent.busy = True
@@ -89,8 +87,6 @@ def test_remove_agent_does_not_delete_busy_agent(
 def test_cleanup_removes_expired_agents(test_db, dummy_agent, manager, monkeypatch):
     mock_timer = Mock()
     monkeypatch.setattr("perry.agents.manager.Timer", mock_timer)
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
 
     test_id = 1
     with freezegun.freeze_time(mock_time()):
@@ -106,8 +102,6 @@ def test_cleanup_removes_expired_agents(test_db, dummy_agent, manager, monkeypat
 def test_cleanup_keeps_unexpired_agents(test_db, dummy_agent, manager, monkeypatch):
     mock_timer = Mock()
     monkeypatch.setattr("perry.agents.manager.Timer", mock_timer)
-    monkeypatch.setattr("perry.agents.manager.read_agent", lambda db, id: True)
-    monkeypatch.setattr("perry.agents.base.BaseAgent.load", lambda db, id: dummy_agent)
 
     test_id = 1
     with freezegun.freeze_time(mock_time()):

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm.session import Session
 from perry.db.operations.agents import read_agent
-from perry.agents.base import BaseAgent
+from perry.agents.base import BaseAgent, AgentRegistry
 
 from threading import Lock, Timer
 from queue import PriorityQueue
@@ -35,10 +35,15 @@ class AgentManager:
             if agent_id in self.agent_dict:
                 return self.agent_dict[agent_id]["agent"]
 
-            if not read_agent(db, agent_id):
+            db_agent = read_agent(db, agent_id)
+            if not db_agent:
                 raise ValueError(f"No agent found with ID {agent_id} in database.")
 
-            agent = BaseAgent.load(db, agent_id)
+            agent_class = AgentRegistry().get_agent_class(db_agent.type)
+            agent = agent_class(db, db_agent.config, agent_id)
+
+            if not agent:
+                raise ValueError(f"Failed to load agent with ID {agent_id}.")
 
             agent.busy = False
 

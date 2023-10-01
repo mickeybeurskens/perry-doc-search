@@ -20,6 +20,7 @@ def test_client(test_db):
         client.app.dependency_overrides[get_db] = get_mock_db
         client.app.dependency_overrides[init_agent_registry] = lambda: AgentRegistry()
         yield client
+        AgentRegistry().reset()
 
 
 def get_mocked_date():

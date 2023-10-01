@@ -2121,6 +2121,24 @@ files = [
 ]
 
 [[package]]
+name = "pypdf"
+version = "3.16.2"
+description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pypdf-3.16.2-py3-none-any.whl", hash = "sha256:d132953be1e2af7b115fbfd445459fdfc601a845ca12379160e1b6afaa1fef2c"},
+    {file = "pypdf-3.16.2.tar.gz", hash = "sha256:6e000281fd0f4cd32e6f1e75b05af0b6c0fbbd9777fa9a8e9d86e34cda65419d"},
+]
+
+[package.extras]
+crypto = ["PyCryptodome", "cryptography"]
+dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "pytest-socket", "pytest-timeout", "wheel"]
+docs = ["myst_parser", "sphinx", "sphinx_rtd_theme"]
+full = ["Pillow (>=8.0.0)", "PyCryptodome", "cryptography"]
+image = ["Pillow (>=8.0.0)"]
+
+[[package]]
 name = "pytest"
 version = "7.4.0"
 description = "pytest: simple powerful testing with Python"
@@ -3277,4 +3295,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "691baed2c87a35410a4e725e46b5d3a831af3891a8cef82be30470e30d70da7d"
+content-hash = "f0c7b49f28691678200a73bc074edaf7fecd1dff5cfc180f5c934dbdbac0f50d"
