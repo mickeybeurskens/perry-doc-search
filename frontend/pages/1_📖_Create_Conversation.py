@@ -10,7 +10,6 @@ def get_selected_document_ids(request_manager: RequestManager):
     if document_response.status_code != 200:
         st.write("Failed to get documents.")
         st.write("Response status code: " + str(document_response.status_code))
-        st.write("Response: " + str(document_response.json()))
         return
 
     documents = document_response.json()

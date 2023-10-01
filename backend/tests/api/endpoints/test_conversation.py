@@ -130,6 +130,14 @@ def query_conversation_agent_mock(conversation_mock, test_client, monkeypatch):
     monkeypatch.setattr(
         str_path_conv_endpoint() + ".read_conversation", lambda db, id: conversation
     )
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".create_message",
+        lambda db, user_id, role, message: 1,
+    )
+    monkeypatch.setattr(
+        str_path_conv_endpoint() + ".add_messages_to_conversation",
+        lambda db, id, ids: True,
+    )
 
     response = "test_response"
     agent = AsyncMock()

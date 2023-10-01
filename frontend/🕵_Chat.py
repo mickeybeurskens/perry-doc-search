@@ -55,22 +55,31 @@ def load_message_history(request_manager: RequestManager, conversation_id: int):
     message_history = request_manager.get_message_history(
         st.session_state["jwt_token"], conversation_id
     )
+    processed_messages = []
     if message_history.status_code == 200:
         if not message_history.json():
             return []
-        st.write(message_history.json())
         for messages in message_history.json():
-            messages["timestamp"] = datetime.strptime(
+            processed_message = {}
+            processed_message["user"] = messages["role"]
+            processed_message["message"] = messages["message"]
+            processed_message["timestamp"] = datetime.strptime(
                 messages["timestamp"], "%Y-%m-%dT%H:%M:%S.%f"
             )
+            processed_messages.append(processed_message)
     else:
         st.write("Failed to retrieve message history.")
         st.write(message_history.status_code)
         st.write(message_history.json())
+    return processed_messages
 
 
 def show_chat(request_manager: RequestManager, conversation_id: int):
     if "messages" not in st.session_state:
+        st.session_state["messages"] = load_message_history(
+            request_manager, conversation_id
+        )
+    if st.session_state["messages"] is None:
         st.session_state["messages"] = load_message_history(
             request_manager, conversation_id
         )
