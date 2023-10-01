@@ -116,16 +116,6 @@ async def conversation_agent_setup(
             detail="Invalid agent type provided.",
         )
     new_agent_id = create_agent(db)
-    try:
-        agent = agent_class(
-            db, conversation_config.agent_settings, agent_id=new_agent_id
-        )
-        agent.save()
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid agent settings provided.",
-        )
 
     conversation_id = create_conversation(db)
     try:
@@ -144,6 +134,17 @@ async def conversation_agent_setup(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create conversation.",
+        )
+
+    try:
+        agent = agent_class(
+            db, conversation_config.agent_settings, agent_id=new_agent_id
+        )
+        agent.save()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid agent settings provided.",
         )
     return conversation_id
 
@@ -222,12 +223,10 @@ async def query_conversation_agent(
         detail="Query failed.",
     )
 
-    import logging
-
     # try:
     answer = await agent.query(conversation_query.query)
-    if not answer:
-        raise query_failed_exception
+    # if not answer:
+    #     raise query_failed_exception
     # except Exception:
     #     raise HTTPException(
     #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

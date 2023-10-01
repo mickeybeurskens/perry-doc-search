@@ -12,6 +12,7 @@ from llama_index import (
     load_index_from_storage,
     Prompt,
 )
+from llama_index.response.schema import Response
 from llama_index.tools import QueryEngineTool, ToolMetadata
 from llama_index.llms import OpenAI
 from llama_index.llms.base import LLM
@@ -49,7 +50,7 @@ class SubquestionAgent(BaseAgent):
     """An agent that queries a set of indexed documents by posing subquestions."""
 
     _cache_path = Path(".cache", "subquestion")
-    _document_hash_file = Path(_cache_path, "doc_hashes.json")
+    _document_hash_file_name = "doc_hashes.json"
 
     def _setup(self):
         self._service_context = self._get_new_service_context(
@@ -60,7 +61,12 @@ class SubquestionAgent(BaseAgent):
         self._engine = self._create_engine()
 
     async def _on_query(self, query: str) -> str:
-        return await self._engine.aquery(query)
+        response = await self._engine.aquery(query)
+        if isinstance(response, Response):
+            return response.__str__()
+        if isinstance(response, str):
+            return response
+        raise Exception(f"Unexpected response type: {type(response)}")
 
     def _on_save(self):
         pass
@@ -98,18 +104,29 @@ class SubquestionAgent(BaseAgent):
                 doc_paths[document.id] = doc_path
         return doc_paths
 
+    def _get_hash_save_file(self) -> Path:
+        return Path(
+            self._cache_path,
+            "agent_" + str(self._agent_data.id),
+            self._document_hash_file_name,
+        )
+
     def _save_file_hashes(self):
         documents = self._agent_data.conversation.documents
         doc_hashes = {}
-        for document in documents:
-            doc_hashes[document.id] = document.hash
-        with self._document_hash_file.open("w") as f:
+        if documents:
+            for document in documents:
+                doc_hashes[document.id] = document.hash
+        if not self._get_hash_save_file().parent.exists():
+            self._get_hash_save_file().parent.mkdir(parents=True)
+        with self._get_hash_save_file().open("w") as f:
             json.dump(doc_hashes, f)
 
     def _load_file_hashes(self) -> dict[int, str]:
-        if not self._document_hash_file.exists():
+        file = self._get_hash_save_file()
+        if not file.exists():
             return {}
-        with self._document_hash_file.open("r") as f:
+        with file.open("r") as f:
             return json.load(f)
 
     def _file_hash_matches(self, doc_id: int) -> bool:

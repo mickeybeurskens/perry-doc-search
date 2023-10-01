@@ -1,6 +1,9 @@
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 from llama_index.llms.mock import MockLLM
 from llama_index.embeddings.langchain import LangchainEmbedding
+from llama_index.query_engine import SubQuestionQueryEngine
+from llama_index.response.schema import Response
 from llama_index import ServiceContext
 from langchain.embeddings.fake import FakeEmbeddings
 from perry.agents.subquestion import SubquestionAgent, SubquestionConfig
@@ -99,12 +102,12 @@ def create_subquestion_agent(
 
     def _create_agent():
         agent_id, conversation_id = add_connected_agent_conversation_to_db()
+        monkeypatch.setattr(SubquestionAgent, "_cache_path", tmp_path)
         agent = SubquestionAgent(
             test_db,
             get_subquestion_config(),
             agent_id,
         )
-        monkeypatch.setattr(SubquestionAgent, "_cache_path", tmp_path)
         return agent
 
     return _create_agent
