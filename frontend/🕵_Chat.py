@@ -75,11 +75,13 @@ def load_message_history(request_manager: RequestManager, conversation_id: int):
 
 
 def show_chat(request_manager: RequestManager, conversation_id: int):
-    if "messages" not in st.session_state:
+    if not conversation_id:
+        st.session_state["messages"] = []
+    elif "messages" not in st.session_state:
         st.session_state["messages"] = load_message_history(
             request_manager, conversation_id
         )
-    if st.session_state["messages"] is None:
+    elif st.session_state["messages"] is None:
         st.session_state["messages"] = load_message_history(
             request_manager, conversation_id
         )
