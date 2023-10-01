@@ -142,7 +142,7 @@ def list_conversations_with_delete_checkbox(request_manager: RequestManager):
             st.subheader(conversation["name"])
             # st.write(conversation)
             col_1, col_2 = st.columns([1, 35])
-            delete_conv[conversation["id"]] = col_1.checkbox("", key=conversation["id"])
+            delete_conv[conversation["id"]] = col_1.checkbox("", key="conv" + str(conversation["id"]))
             col_2.write("__ID:__ " + str(conversation["id"]))
             st.write("__Agent type:__ " + str(conversation["agent_type"]))
             st.write("__Agent settings:__ ")

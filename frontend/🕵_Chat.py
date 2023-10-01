@@ -35,8 +35,8 @@ def handle_conversation_selection(request_manager: RequestManager):
                 display_conversation_info(conversation)
     else:
         st.write("Failed to retrieve conversations.")
-        st.write(conversation_info.status_code)
-        st.write(conversation_info.json())
+        st.write(conversation_response.status_code)
+        st.write(conversation_response.json())
     st.sidebar.write("---")
     return conversation_id
 

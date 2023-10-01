@@ -112,10 +112,9 @@ class SubquestionAgent(BaseAgent):
         )
 
     def _save_file_hashes(self):
-        documents = self._agent_data.conversation.documents
         doc_hashes = {}
-        if documents:
-            for document in documents:
+        if hasattr(self._agent_data.conversation, "documents"):
+            for document in self._agent_data.conversation.documents:
                 doc_hashes[document.id] = document.hash
         if not self._get_hash_save_file().parent.exists():
             self._get_hash_save_file().parent.mkdir(parents=True)
@@ -246,7 +245,7 @@ class SubquestionAgent(BaseAgent):
                     query_engine=doc_indexes[doc_id].as_query_engine(
                         service_context=self._service_context
                     ),
-                    metadata=ToolMetadata(name=doc_id, description=summary),
+                    metadata=ToolMetadata(name=str(doc_id), description=summary),
                 )
             )
         return SubQuestionQueryEngine.from_defaults(

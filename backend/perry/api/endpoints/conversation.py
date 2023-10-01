@@ -144,7 +144,7 @@ async def conversation_agent_setup(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid agent settings provided.",
+            detail="Agent could not be created.",
         )
     return conversation_id
 

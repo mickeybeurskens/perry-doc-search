@@ -24,7 +24,6 @@ class DatabaseSessionManager:
 
             db_path = target_directory / f"{cls._db_name}.db"
             cls._engine = create_engine(f"sqlite:///{db_path}")
-            
             Base.metadata.create_all(bind=cls._engine)
         return cls._engine
 

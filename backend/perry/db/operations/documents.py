@@ -178,4 +178,8 @@ def document_owned_by_user(db: Session, document_id: int, user_id: int):
 
 def _get_file_hash(file: io.BytesIO):
     """Get a hash of the file."""
-    return hash(file.read())
+    original_position = file.tell()
+    file.seek(0)
+    h = hash(file.read())
+    file.seek(original_position)
+    return h
