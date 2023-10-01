@@ -18,9 +18,13 @@ class DatabaseSessionManager:
             target_directory = current_file_path.parents[2]
 
             if not target_directory.exists():
-                raise FileNotFoundError(f"The directory {target_directory} does not exist.")
+                raise FileNotFoundError(
+                    f"The directory {target_directory} does not exist."
+                )
             if not os.access(target_directory, os.W_OK):
-                raise PermissionError(f"No write permission for directory {target_directory}")
+                raise PermissionError(
+                    f"No write permission for directory {target_directory}"
+                )
 
             db_path = target_directory / f"{cls._db_name}.db"
             cls._engine = create_engine(f"sqlite:///{db_path}")

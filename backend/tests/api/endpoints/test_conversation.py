@@ -254,7 +254,7 @@ def test_create_conversation_errors_with_invalid_agent_settings(
         json=conversation_json,
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "Invalid agent settings provided."}
+    assert response.json() == {"detail": "Agent could not be created."}
     assert mock_get_user_documents.call_count == 1
 
 
