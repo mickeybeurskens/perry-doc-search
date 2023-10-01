@@ -161,3 +161,15 @@ cython_debug/
 
 .streamlit
 stauth
+
+# SQL
+*.sqlite
+
+# VS Code
+.vscode/
+
+# Treafic files
+letsencrypt/
+
+# SQLite DB
+*.db
