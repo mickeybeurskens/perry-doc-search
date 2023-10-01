@@ -15,7 +15,7 @@ class DatabaseSessionManager:
     def get_engine(cls):
         if cls._engine is None:
             current_file_path = Path(__file__).resolve()
-            target_directory = current_file_path.parents[1]
+            target_directory = current_file_path.parents[2]
 
             if not target_directory.exists():
                 raise FileNotFoundError(f"The directory {target_directory} does not exist.")
