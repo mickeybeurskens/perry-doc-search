@@ -24,19 +24,22 @@ def upload_document(request_manager):
             st.error("Could not upload file. Please enter a description.")
             return
         elif button_press:
-          document_response = request_manager.upload_document(
-              st.session_state["jwt_token"], document
-          )
-          doc_id = document_response.json()["id"]
-          update_response = request_manager.update_document(
+            document_response = request_manager.upload_document(
+                st.session_state["jwt_token"], document
+            )
+            doc_id = document_response.json()["id"]
+            update_response = request_manager.update_document(
                 st.session_state["jwt_token"], doc_id, document.name, description
             )
-          if document_response.status_code == 201 and update_response.status_code == 200:
-              st.write("Successfully uploaded document.")
-          else:
-              st.write("Failed to upload document.")
-              st.write(document_response.status_code)
-              st.write(document_response)
+            if (
+                document_response.status_code == 201
+                and update_response.status_code == 200
+            ):
+                st.write("Successfully uploaded document.")
+            else:
+                st.write("Failed to upload document.")
+                st.write(document_response.status_code)
+                st.write(document_response)
 
 
 def list_documents_to_delete(request_manager):
@@ -49,8 +52,8 @@ def list_documents_to_delete(request_manager):
         for idx, doc in enumerate(documents):
             col_1, col_2 = st.columns([1, 16])
             checkboxes[idx] = col_1.checkbox("", key=idx)
-            col_2.write("__Name:__ " +doc["title"])
-            st.info("Description: " +doc["description"])
+            col_2.write("__Name:__ " + doc["title"])
+            st.info("Description: " + doc["description"])
             st.divider()
         if st.button("Delete selected"):
             for idx, doc in enumerate(documents):

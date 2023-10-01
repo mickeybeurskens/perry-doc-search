@@ -26,12 +26,12 @@ class RequestManager:
         return requests.get(
             f"{self.base_url}/conversations/", headers=self._get_auth_header(token)
         )
-    
+
     def get_agent_registry_info(self, token):
         return requests.get(
             f"{self.base_url}/agents/info", headers=self._get_auth_header(token)
         )
-    
+
     def create_conversation(self, token, name, agent_type, agent_settings, doc_ids):
         json = {
             "name": name,
@@ -42,18 +42,24 @@ class RequestManager:
         return requests.post(
             f"{self.base_url}/conversations/",
             headers=self._get_auth_header(token),
-            json=json
+            json=json,
         )
-    
+
     def delete_conversation(self, token, conversation_id):
         return requests.delete(
             f"{self.base_url}/conversations/{conversation_id}",
             headers=self._get_auth_header(token),
         )
-    
+
     def get_conversation_info(self, token, conversation_id):
         return requests.get(
             f"{self.base_url}/conversations/{conversation_id}",
+            headers=self._get_auth_header(token),
+        )
+
+    def get_message_history(self, token, conversation_id):
+        return requests.get(
+            f"{self.base_url}/conversations/{conversation_id}/messages",
             headers=self._get_auth_header(token),
         )
 
@@ -75,13 +81,13 @@ class RequestManager:
             headers=self._get_auth_header(token),
             json={"description": description, "title": title, "id": document_id},
         )
-        
+
     def delete_document(self, token, document_id):
         return requests.delete(
             f"{self.base_url}/documents/file/{document_id}",
             headers=self._get_auth_header(token),
         )
-    
+
     def query_agent(self, token, conversation_id, query):
         return requests.post(
             f"{self.base_url}/conversations/{conversation_id}",

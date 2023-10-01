@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 from perry.requests import RequestManager
 from perry.authentication import session_login_wrapper
 
@@ -19,6 +20,11 @@ def handle_conversation_selection(request_manager: RequestManager):
             ],
         )
         if conversation_id:
+            if "conversation_id" not in st.session_state:
+                st.session_state["conversation_id"] = conversation_id
+            if st.session_state["conversation_id"] != conversation_id:
+                st.session_state["messages"] = []
+                st.session_state["conversation_id"] = conversation_id
             conversation_id = int(conversation_id.split(":")[0])
             conversation = [
                 conversation
@@ -45,35 +51,65 @@ def display_conversation_info(conversation_info):
         st.sidebar.write([doc_title for doc_title in conversation_info["doc_titles"]])
 
 
+def load_message_history(request_manager: RequestManager, conversation_id: int):
+    message_history = request_manager.get_message_history(
+        st.session_state["jwt_token"], conversation_id
+    )
+    if message_history.status_code == 200:
+        if not message_history.json():
+            return []
+        st.write(message_history.json())
+        for messages in message_history.json():
+            messages["timestamp"] = datetime.strptime(
+                messages["timestamp"], "%Y-%m-%dT%H:%M:%S.%f"
+            )
+    else:
+        st.write("Failed to retrieve message history.")
+        st.write(message_history.status_code)
+        st.write(message_history.json())
+
+
 def show_chat(request_manager: RequestManager, conversation_id: int):
-    st.session_state["messages"] = [
-        {"user": "user", "message": "Hello!", "timestamp": "2021-08-01 12:00:00"},
-        {"user": "assistant", "message": "Hi there!", "timestamp": "2021-08-01 12:00:01"},
-    ]
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = load_message_history(
+            request_manager, conversation_id
+        )
+    elif len(st.session_state["messages"]) == 0:
+        st.session_state["messages"] = load_message_history(
+            request_manager, conversation_id
+        )
+
     for message in st.session_state["messages"]:
         with st.chat_message(message["user"]):
             st.write(message["message"])
 
-    message = st.chat_input("Chat with Perry", key="message")
-    if message:
-        st.session_state["messages"].append(
-            {"user": "user", "message": message, "timestamp": "2021-08-01 12:00:02"}
-        )
-        agent_response = request_manager.query_agent(
-            st.session_state["jwt_token"], conversation_id, message
-        )
-        if agent_response.status_code == 200:
-            agent_response = agent_response.json()
-            st.session_state["messages"].append(
-                {
-                    "user": "assistant",
-                    "message": agent_response["response"],
-                    "timestamp": agent_response["timestamp"],
-                }
+    query = st.chat_input("Chat with Perry", key="query")
+
+    if query:
+        user_message = {
+            "user": "user",
+            "message": query,
+            "timestamp": datetime.now(),
+        }
+        st.session_state["messages"].append(user_message)
+        with st.chat_message(user_message["user"]):
+            st.write(user_message["message"])
+
+        with st.spinner("Writing response..."):
+            agent_response = request_manager.query_agent(
+                st.session_state["jwt_token"], conversation_id, query
             )
-        st.rerun()
-            
-    
+            if agent_response.status_code == 200:
+                agent_response = agent_response.json()
+                st.write(agent_response)
+                st.session_state["messages"].append(
+                    {
+                        "user": "assistant",
+                        "message": agent_response,
+                        "timestamp": datetime.now(),
+                    }
+                )
+            st.rerun()
 
 
 def handle_user_display(request_manager):

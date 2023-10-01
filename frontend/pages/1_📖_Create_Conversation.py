@@ -63,7 +63,7 @@ def show_agent_variable_settings(info):
 
     # Get settings for selected agent type
     agent_settings = get_agent_settings_from_user(settings_schema)
-    
+
     type_and_settings = {}
     type_and_settings["type"] = agent_type
     type_and_settings["settings"] = agent_settings
@@ -155,7 +155,7 @@ def list_conversations_with_delete_checkbox(request_manager: RequestManager):
         st.write("Failed to get conversations.")
         st.write(conversation_response.status_code)
         st.write(conversation_response)
-    
+
     if delete_button:
         for del_id in delete_conv.keys():
             if delete_conv[del_id]:
@@ -167,7 +167,6 @@ def list_conversations_with_delete_checkbox(request_manager: RequestManager):
                     st.warning(delete_response.status_code)
                     st.warning(delete_response.json())
         st.rerun()
-
 
 
 def handle_session(request_manager):
