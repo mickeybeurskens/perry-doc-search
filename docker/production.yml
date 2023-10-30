@@ -13,7 +13,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.frontendresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.frontendresolver.acme.email=mickey@forgefire.dev"
+      # - "--certificatesresolvers.frontendresolver.acme.email=your@email.com" TODO: Your email here
       - "--certificatesresolvers.frontendresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       # The HTTP port
@@ -55,7 +55,7 @@ services:
       - "8501:8501"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`perry.forgefire.dev`)"
+      # - "traefik.http.routers.frontend.rule=Host(`your.url.here.com`)" TODO: Your URL Here
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=frontendresolver"
 
