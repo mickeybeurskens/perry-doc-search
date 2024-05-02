@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
-COPY poetry.lock pyproject.toml ./
+COPY pyproject.toml ./
 COPY README.md ./
 COPY perry ./perry
 RUN poetry install 
